@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { StudentModel, ResourceModel } from '@edusync/db';
+import { GeminiService } from '../../services/gemini-service.js';
 
 export const getSystemStats = async (req: Request, res: Response) => {
   try {
@@ -40,6 +41,16 @@ export const resolveFlag = async (req: Request, res: Response) => {
     res.json({ message: `Guardian Protocol: Flag ${flagId} Resolved via ${action}`, timestamp: new Date() });
   } catch (err) {
     res.status(500).json({ error: 'Resolution Sync Failure' });
+  }
+};
+
+export const runSafetyAudit = async (req: Request, res: Response) => {
+  try {
+    const { content } = req.body;
+    const audit = await GeminiService.analyzeSafety(content);
+    res.json(audit);
+  } catch (error) {
+    res.status(500).json({ error: 'AI Safety Audit Failure' });
   }
 };
 

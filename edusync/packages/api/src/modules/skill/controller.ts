@@ -97,3 +97,25 @@ export const updateProfile = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Profile Sync Failure' });
   }
 };
+
+export const enhanceDescription = async (req: Request, res: Response) => {
+  try {
+    const { draft } = req.body;
+    const { GeminiService } = await import('../../services/gemini-service.js');
+    const enhanced = await GeminiService.generateSkillListing(draft);
+    res.json({ enhanced });
+  } catch (error) {
+    res.status(500).json({ error: 'AI Enhancement Failure' });
+  }
+};
+
+export const getSemanticMatches = async (req: Request, res: Response) => {
+  try {
+    const { query, library } = req.body;
+    const { GeminiService } = await import('../../services/gemini-service.js');
+    const matches = await GeminiService.matchSkillIntent(query, library);
+    res.json({ matches });
+  } catch (error) {
+    res.status(500).json({ error: 'Semantic Match Failure' });
+  }
+};
