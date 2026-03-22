@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRISM | Turn Ideas Into Products</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --deep-blue: #1a365d;
+            --rich-purple: #6B46C1;
+            --spect-red: #FF6B6B;
+            --spect-orange: #FFA500;
+            --spect-yellow: #FFD700;
+            --spect-green: #4CAF50;
+            --spect-blue: #2196F3;
+            --dark-gray: #2D3748;
+            --light-gray: #E2E8F0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--dark-gray);
+            line-height: 1.6;
+            background-color: #f8fafc;
+        }
+
+        /* Navbar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 5%;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--deep-blue);
+            text-decoration: none;
+        }
+
+        .logo-container img {
+            height: 40px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark-gray);
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--rich-purple);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--rich-purple), var(--deep-blue));
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(107, 70, 193, 0.3);
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 120px 5%;
+            text-align: center;
+            background: linear-gradient(to bottom right, #ffffff, #f1f5f9);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg at 50% 50%, var(--spect-red), var(--spect-orange), var(--spect-yellow), var(--spect-green), var(--spect-blue), var(--spect-red));
+            opacity: 0.03;
+            animation: rotate 60s linear infinite;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--deep-blue);
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .hero .highlight {
+            background: linear-gradient(135deg, var(--spect-red), var(--spect-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            color: var(--dark-gray);
+            max-width: 800px;
+            margin: 0 auto 48px;
+            position: relative;
+        }
+
+        .spectrum-bar {
+            height: 8px;
+            width: 100%;
+            background: linear-gradient(90deg, var(--spect-red), var(--spect-orange), var(--spect-yellow), var(--spect-green), var(--spect-blue));
+        }
+
+        /* Features */
+        .features {
+            padding: 100px 5%;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid var(--light-gray);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 24px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            color: var(--deep-blue);
+            margin-bottom: 16px;
+        }
+
+        .feature-card p {
+            font-family: 'Inter', sans-serif;
+            color: #4a5568;
+        }
+
+        footer {
+            background: var(--deep-blue);
+            color: white;
+            padding: 60px 5%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="spectrum-bar"></div>
+    
+    <nav>
+        <a href="/" class="logo-container">
+            <img src="../assets/prism-logo.svg" alt="PRISM Logo">
+            PRISM
+        </a>
+        <div class="nav-links">
+            <a href="#methodology">Methodology</a>
+            <a href="#docs">Documentation</a>
+            <a href="#examples">Examples</a>
+            <a href="https://github.com/prism-etpd" class="btn-primary" style="padding: 8px 20px; color: white;">GitHub</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Turn Ideas Into <span class="highlight">Products</span></h1>
+        <p>From vision to launch in 10 structured phases. Zero surprises. Full confidence.</p>
+        <div>
+            <a href="docs.html" class="btn-primary" style="font-size: 1.25rem; padding: 16px 36px;">Start Building</a>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="feature-card">
+            <div class="feature-icon">💎</div>
+            <h3>Crystal Clear Clarity</h3>
+            <p>Know exactly what to build and when. A complete 10-phase roadmap that completely removes guesswork from the equation.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <h3>Production-Grade Quality</h3>
+            <p>Security, testing, and full-stack monitoring integrated from Day 1—not as an afterthought before launch.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3>AI-Powered Execution</h3>
+            <p>Perfectly compatible with Claude and modern AI code companions to autonomously build complete software platforms.</p>
+        </div>
+    </section>
+
+    <footer>
+        <h2>Start building with PRISM today.</h2>
+        <p style="margin-top: 24px; opacity: 0.8;">MIT Licensed. Free for commercial and personal use.</p>
+    </footer>
+</body>
+</html>
