@@ -13,6 +13,21 @@ export class CampusSettingsController {
     }
   }
 
+  static async updateSettings(req: Request, res: Response) {
+    try {
+      const campus = (req as any).student.campus;
+      const adminUid = (req as any).student.firebaseUid;
+      const { settings } = req.body;
+
+      if (!settings) return res.status(400).json({ error: 'settings is required' });
+
+      const updated = await CampusSettingsService.updateCampusSettings(campus, adminUid, settings);
+      res.json({ success: true, data: updated });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   static async updateNexusSettings(req: Request, res: Response) {
     try {
       const campus = (req as any).student.campus;

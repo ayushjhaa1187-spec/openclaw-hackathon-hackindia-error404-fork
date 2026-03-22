@@ -47,8 +47,15 @@ export const institutionalAuth = (req: Request, res: Response, next: NextFunctio
 };
 
 export const adminOnly = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.student || !req.student.roles.includes('nexus_admin')) {
+  if (!req.student || (!req.student.roles.includes('nexus_admin') && !req.student.roles.includes('super_admin'))) {
     return res.status(403).json({ error: 'Unauthorized: Requires Institutional Admin clearance.' });
+  }
+  next();
+};
+
+export const requireSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.student || !req.student.roles.includes('super_admin')) {
+    return res.status(403).json({ error: 'Unauthorized: Requires Super Admin (Global Governance) clearance.' });
   }
   next();
 };

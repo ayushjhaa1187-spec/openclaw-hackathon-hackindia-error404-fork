@@ -6,6 +6,58 @@ import { SwapService } from '../swap/service.js';
 import { getIO } from '../../socket.js';
 
 export class MOUService {
+  static async proposeMOU(initiatingCampus: string, acceptingCampus: string, adminUid: string, data: any) {
+    if (initiatingCampus === acceptingCampus) throw new Error('CANNOT_PROPOSE_MOU_TO_SELF');
+
+    const mouReferenceNumber = `MOU-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const query = `
+      INSERT INTO mou_handshake_log (
+        initiating_campus, 
+        accepting_campus, 
+        agreement_terms, 
+        valid_until, 
+        mou_reference_number, 
+        credit_exchange_rate, 
+        max_cross_connections, 
+        data_share_level, 
+        proposed_by, 
+        status, 
+        "isActive"
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', false)
+      RETURNING *
+    `;
+
+    const values = [
+      initiatingCampus,
+      acceptingCampus,
+      data.agreementTerms || 'Standard EduSync Nexus MOU v2.0',
+      data.validUntil || null,
+      mouReferenceNumber,
+      data.creditExchangeRate || 1.0,
+      data.maxCrossConnections || 100,
+      data.dataShareLevel || 'profiles_only',
+      adminUid
+    ];
+
+    const result = await nexusConnector.pg.query(query, values);
+    const mou = result.rows[0];
+
+    // Invalidate local cache
+    await redis.del(`mou:list:${initiatingCampus}`);
+    await redis.del(`mou:list:${acceptingCampus}`);
+
+    // Real-time notify receiving campus admins
+    const io = getIO();
+    io.to(`admin:${acceptingCampus}`).emit('mou:proposal_received', { 
+      mouId: mou.id, 
+      from: initiatingCampus 
+    });
+
+    return mou;
+  }
+
   static async getMOUList(adminCampus: string) {
     const cacheKey = `mou:list:${adminCampus}`;
     const cached = await redis.get(cacheKey);

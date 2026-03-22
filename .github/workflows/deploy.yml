@@ -1,52 +1,116 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+name: Deploy
 
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches: ["main"]
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+defaults:
+  run:
+    working-directory: edusync
 
 jobs:
-  # Single deploy job since we're just deploying
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+      
+      postgres:
+        image: postgres:15
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: postgres
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+      
+      meilisearch:
+        image: getmeili/meilisearch:latest
+        ports:
+          - 7700:7700
+        env:
+          MEILI_MASTER_KEY: test-key
+
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up Node
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'npm'
+          cache-dependency-path: edusync/package-lock.json
+
       - name: Install dependencies
         run: npm install
-      - name: Build
-        run: npm run build
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # Upload entire repository
-          path: './dist'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+
+      - name: Type check
+        run: npm --workspace=@edusync/api run type-check
+
+      - name: Unit tests
+        run: npm --workspace=@edusync/api run test:unit
+        continue-on-error: false
+
+      - name: Integration tests
+        run: npm --workspace=@edusync/api run test:integration
+        continue-on-error: false
+
+      - name: Lint
+        run: npm --workspace=@edusync/api run lint
+        continue-on-error: true
+
+      # ⭐ CRITICAL: Smoke Tests (blocks deployment)
+      - name: Run Smoke Tests
+        id: smoke-tests
+        run: npm --workspace=@edusync/api run test:smoke
+        timeout-minutes: 5
+        env:
+          API_URL: http://localhost:3001
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/edusync_test
+          MONGODB_URI: mongodb://localhost:27017/edusync_test
+          REDIS_URL: redis://localhost:6379
+          MEILISEARCH_HOST: http://localhost:7700
+          MEILISEARCH_MASTER_KEY: test-key
+
+      - name: Block deployment if tests fail
+        if: failure() && steps.smoke-tests.outcome == 'failure'
+        run: |
+          echo "❌ Smoke tests failed. Deployment blocked."
+          echo "Check logs above for details."
+          exit 1
+
+      - name: Build API
+        run: npm --workspace=@edusync/api run build
+
+      - name: Build Web
+        run: npm --workspace=@edusync/web run build
+
+      - name: Build Admin
+        run: npm --workspace=@edusync/admin run build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to AWS ECS
+        run: |
+          echo "Deploying to production..."
+          # In a real environment, this would call AWS CLI or similar
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

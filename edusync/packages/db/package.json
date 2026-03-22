@@ -3,13 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "./dist/nexus-connector.js",
-  "types": "./dist/nexus-connector.d.ts",
+  "main": "./dist/src/nexus-connector.js",
+  "types": "./dist/src/nexus-connector.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/nexus-connector.d.ts",
-      "import": "./dist/nexus-connector.js",
-      "require": "./dist/nexus-connector.js"
+      "types": "./dist/src/nexus-connector.d.ts",
+      "import": "./dist/src/nexus-connector.js"
     }
   },
   "dependencies": {

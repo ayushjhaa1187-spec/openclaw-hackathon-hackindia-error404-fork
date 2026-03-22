@@ -3,6 +3,9 @@ import { Inter, Outfit } from "next/font/google";
 import "../styles/globals.css";
 import { Navigation } from "../components/shared/navigation";
 import { Footer } from "../components/shared/footer";
+import { ErrorBoundary } from "../components/shared/ErrorBoundary";
+import { Toaster } from "react-hot-toast";
+import { Toaster as Sonner } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -25,13 +28,17 @@ export default function RootLayout({
           <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/5 rounded-full blur-[100px] animate-pulse delay-700"></div>
         </div>
         
-        <Navigation />
-        
-        <main className="flex-grow">
-          {children}
-        </main>
-
-        <Footer />
+        <ErrorBoundary>
+          <Navigation />
+          
+          <main className="flex-grow">
+            {children}
+          </main>
+  
+          <Footer />
+          <Toaster position="bottom-right" reverseOrder={false} />
+          <Sonner theme="dark" position="top-right" closeButton />
+        </ErrorBoundary>
       </body>
     </html>
   );

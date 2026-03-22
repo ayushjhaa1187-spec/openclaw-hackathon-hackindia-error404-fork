@@ -15,7 +15,9 @@ import { StudentDetailController } from './modules/admin/student-detail.controll
 import { CampusSettingsController } from './modules/admin/campus-settings.controller.js';
 import { MOUController } from './modules/mou/controller.js';
 import { SearchController } from './modules/search/controller.js';
-import { institutionalAuth, adminOnly } from './middleware/auth.js';
+import { SuperAdminController } from './modules/super-admin/controller.js';
+import { ErrorReportController } from './modules/errors/controller.js';
+import { institutionalAuth, adminOnly, requireSuperAdmin } from './middleware/auth.js';
 import { nexusGuard } from './middleware/nexus-guard.js';
 import { KarmaService } from './modules/karma/service.js';
 
@@ -82,6 +84,7 @@ router.get('/karma/history', institutionalAuth, KarmaController.getHistory);
 router.get('/admin/analytics/overview', institutionalAuth, adminOnly, AnalyticsController.getOverview);
 router.get('/admin/analytics/trends', institutionalAuth, adminOnly, AnalyticsController.getTrends);
 router.get('/admin/analytics/karma', institutionalAuth, adminOnly, AnalyticsController.getKarmaFlow);
+router.get('/admin/analytics/group', institutionalAuth, adminOnly, AnalyticsController.getGroupOverview);
 router.post('/admin/analytics/export', institutionalAuth, adminOnly, AnalyticsController.exportROI);
 
 // --- GUARDIAN AI MONITOR (S27) ---
@@ -105,7 +108,16 @@ router.delete('/admin/settings/admins/:uid', institutionalAuth, adminOnly, Campu
 router.patch('/admin/settings/nexus', institutionalAuth, adminOnly, CampusSettingsController.updateNexusSettings);
 router.patch('/admin/settings/guardian', institutionalAuth, adminOnly, CampusSettingsController.updateGuardianSettings);
 router.patch('/admin/settings/karma', institutionalAuth, adminOnly, CampusSettingsController.updateKarmaSettings);
+router.get('/admin/settings/campus', institutionalAuth, adminOnly, CampusSettingsController.getSettings);
+router.patch('/admin/settings/campus', institutionalAuth, adminOnly, CampusSettingsController.updateSettings);
 router.get('/admin/settings', institutionalAuth, adminOnly, CampusSettingsController.getSettings);
+
+// --- SUPER ADMIN CONTROL PLANE ---
+router.get('/super-admin/dashboard', institutionalAuth, requireSuperAdmin, SuperAdminController.getDashboard);
+router.get('/super-admin/college-groups', institutionalAuth, requireSuperAdmin, SuperAdminController.getCollegeGroups);
+router.post('/super-admin/college-groups', institutionalAuth, requireSuperAdmin, SuperAdminController.createCollegeGroup);
+router.delete('/super-admin/college-groups/:groupId', institutionalAuth, requireSuperAdmin, SuperAdminController.dissolveCollegeGroup);
+router.get('/super-admin/analytics', institutionalAuth, requireSuperAdmin, SuperAdminController.getAnalytics);
 
 
 // Student Reporting
@@ -131,6 +143,7 @@ router.post('/ai/enhance', institutionalAuth, SkillController.enhanceDescription
 router.post('/ai/match', institutionalAuth, SkillController.getSemanticMatches);
 
 // --- MOU CONSOLE (S24) ---
+router.post('/admin/mou/propose', institutionalAuth, adminOnly, MOUController.propose);
 router.get('/admin/mou/proposals', institutionalAuth, adminOnly, MOUController.getMOUList); // Lists all MOUs for dashboard summary
 router.get('/admin/mou', institutionalAuth, adminOnly, MOUController.getMOUList);
 router.get('/admin/mou/:mouId/log', institutionalAuth, adminOnly, MOUController.getTransparencyLog);
@@ -149,5 +162,10 @@ router.get('/notifications', institutionalAuth, NotificationController.getNotifi
 router.post('/admin/search/reindex', institutionalAuth, adminOnly, SearchController.bulkReindex);
 router.get('/admin/search/status', institutionalAuth, adminOnly, SearchController.getStats);
 router.get('/search/suggestions', SearchController.getSuggestions);
+
+// --- ERROR REPORTING & MONITORING ---
+router.post('/errors/report', ErrorReportController.reportError);
+router.get('/admin/errors', institutionalAuth, adminOnly, ErrorReportController.listErrorReports);
+router.patch('/admin/errors/:errorId/resolve', institutionalAuth, adminOnly, ErrorReportController.markResolved);
 
 export default router;

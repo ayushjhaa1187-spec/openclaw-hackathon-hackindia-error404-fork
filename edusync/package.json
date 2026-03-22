@@ -7,7 +7,7 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "db:seed": "npm --workspace=@edusync/db run seed",
-    "test:smoke": "npm --workspace=api run test:smoke"
+    "test:smoke": "npm --workspace=@edusync/api run test:smoke"
   },
   "devDependencies": {
     "turbo": "latest",

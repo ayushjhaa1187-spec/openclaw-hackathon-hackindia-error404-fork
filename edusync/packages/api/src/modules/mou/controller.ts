@@ -4,6 +4,31 @@ import { z } from 'zod';
 import { ExportService } from '../analytics/export.service.js';
 
 export class MOUController {
+  static async propose(req: Request, res: Response) {
+    try {
+      const adminUid = (req as any).student.firebaseUid;
+      const initiatingCampus = (req as any).student.campus;
+      
+      const schema = z.object({
+        acceptingCampus: z.string().min(3),
+        agreementTerms: z.string().optional(),
+        validUntil: z.string().datetime().optional(),
+        creditExchangeRate: z.number().min(0.1).max(10.0).optional(),
+        maxCrossConnections: z.number().min(1).max(1000).optional(),
+        dataShareLevel: z.enum(['profiles_only', 'full_transparency']).optional()
+      });
+
+      const validated = schema.parse(req.body);
+      const result = await MOUService.proposeMOU(initiatingCampus, validated.acceptingCampus, adminUid, validated);
+      res.status(201).json({ success: true, data: result });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.issues[0].message });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   static async getMOUList(req: Request, res: Response) {
     try {
       const campus = (req as any).student.campus;

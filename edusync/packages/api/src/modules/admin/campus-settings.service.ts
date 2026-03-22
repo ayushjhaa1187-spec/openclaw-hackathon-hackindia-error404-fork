@@ -97,6 +97,39 @@ export class CampusSettingsService {
     return updated;
   }
 
+  static async updateCampusSettings(campus: string, adminUid: string, updates: any) {
+    // Flatten and map fields if necessary
+    const updateObj: any = { 
+      updatedBy: adminUid, 
+      updatedAt: new Date() 
+    };
+
+    if (updates.nexus) updateObj.nexus = updates.nexus;
+    if (updates.guardian) updateObj.guardian = updates.guardian;
+    if (updates.karma) updateObj.karma = updates.karma;
+    if (updates.verification) updateObj.verification = updates.verification;
+    if (updates.display) updateObj.display = updates.display;
+
+    // Handle user's aliases from the prompt (if they differ from schema)
+    if (updates.guardianAI) updateObj.guardian = { ...updateObj.guardian, ...updates.guardianAI };
+    if (updates.karmaEconomy) updateObj.karma = { ...updateObj.karma, ...updates.karmaEconomy };
+
+    const updated = await CampusSettingsModel.findOneAndUpdate(
+      { campus },
+      { $set: updateObj },
+      { upsert: true, new: true }
+    ).lean();
+
+    await redis.del(`campus-settings:${campus}`);
+
+    await nexusConnector.pg.query(
+      'INSERT INTO admin_actions (admin_uid, admin_campus, action_type, target_entity_type, target_entity_id, reason) VALUES ($1, $2, $3, $4, $5, $6)',
+      [adminUid, campus, 'campus_settings_batch_update', 'campus', campus, 'Campus configuration updated via unified console']
+    );
+
+    return updated;
+  }
+
   static async getAdminUsers(campus: string) {
     return StudentModel.find({ 
       campus, 

@@ -5,7 +5,7 @@ import { ExportService } from './export.service.js';
 export class AnalyticsController {
   static async getOverview(req: Request, res: Response) {
     try {
-      const campus = (req as any).user.campus;
+      const campus = (req as any).student.campus;
       const overview = await AnalyticsService.getOverview(campus);
       res.json(overview);
     } catch (error) {
@@ -14,9 +14,23 @@ export class AnalyticsController {
     }
   }
 
+  static async getGroupOverview(req: Request, res: Response) {
+    try {
+      // Super Admin check could be here, or in middleware
+      const { collegeGroupId } = req.query;
+      if (!collegeGroupId) return res.status(400).json({ error: 'collegeGroupId is required' });
+
+      const overview = await AnalyticsService.getGroupOverview(collegeGroupId as string);
+      res.json(overview);
+    } catch (error) {
+      console.error('Group Analytics Error:', error);
+      res.status(500).json({ error: 'Failed to fetch group analytics' });
+    }
+  }
+
   static async getTrends(req: Request, res: Response) {
     try {
-      const campus = (req as any).user.campus;
+      const campus = (req as any).student.campus;
       const { range = '30d' } = req.query;
       
       const [swaps, vault] = await Promise.all([
@@ -33,7 +47,7 @@ export class AnalyticsController {
 
   static async getKarmaFlow(req: Request, res: Response) {
     try {
-      const campus = (req as any).user.campus;
+      const campus = (req as any).student.campus;
       const { range = '30d' } = req.query;
       const flow = await AnalyticsService.getKarmaFlow(campus, range as any);
       res.json(flow);
@@ -45,8 +59,8 @@ export class AnalyticsController {
 
   static async exportROI(req: Request, res: Response) {
     try {
-      const campus = (req as any).user.campus;
-      const adminUid = (req as any).user.uid;
+      const campus = (req as any).student.campus;
+      const adminUid = (req as any).student.uid;
       await ExportService.requestReport(campus, adminUid);
       res.json({ message: 'ROI Export request initiated. You will be notified via Socket.io when ready.' });
     } catch (error) {

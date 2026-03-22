@@ -407,4 +407,37 @@ export class AnalyticsService {
     await redis.set(cacheKey, JSON.stringify(dashboard), { EX: 900 });
     return dashboard;
   }
+
+  /**
+   * Aggregates metrics for an entire college group.
+   */
+  static async getGroupOverview(collegeGroupId: string) {
+    const cacheKey = `analytics:group:${collegeGroupId}:overview`;
+    const cached = await redis.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
+    // 1. Find all campuses in this group
+    const campuses = await nexusConnector.mongo.models.Student.distinct('campus', { collegeGroupId });
+
+    // 2. Aggregate metrics across campuses
+    const overviews = await Promise.all(campuses.map(c => this.getOverview(c)));
+
+    const groupOverview = {
+      collegeGroupId,
+      campusCount: campuses.length,
+      campuses,
+      aggregate: {
+        totalStudents: overviews.reduce((acc, curr) => acc + curr.totalStudents, 0),
+        nexusEnabledStudents: overviews.reduce((acc, curr) => acc + curr.nexusEnabledStudents, 0),
+        totalResourcesCertified: overviews.reduce((acc, curr) => acc + curr.totalResourcesCertified, 0),
+        totalResourcesUploaded: overviews.reduce((acc, curr) => acc + curr.totalResourcesUploaded, 0),
+        totalKarmaCirculating: overviews.reduce((acc, curr) => acc + curr.totalKarmaCirculating, 0),
+        activeMOUCount: overviews.reduce((acc, curr) => acc + curr.activeMOUCount, 0),
+      },
+      generatedAt: new Date()
+    };
+
+    await redis.set(cacheKey, JSON.stringify(groupOverview), { EX: 1800 }); // 30 min
+    return groupOverview;
+  }
 }
