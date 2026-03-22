@@ -49,3 +49,6 @@ export const KarmaTransactionSchema = z.object({
 export type StudentProfile = z.infer<typeof StudentProfileSchema>;
 export type SkillSwap = z.infer<typeof SkillSwapSchema>;
 export type KarmaTransaction = z.infer<typeof KarmaTransactionSchema>;
+
+// Security Utilities (AES-256-GCM)
+export * from './utils/security';

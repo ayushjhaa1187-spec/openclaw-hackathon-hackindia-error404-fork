@@ -1,28 +1,23 @@
 import { Request, Response } from 'express';
 import { StudentModel, SwapModel } from '@edusync/db';
 import { nexusConnector } from '@edusync/db';
-import { SkillSwapSchema } from '@edusync/shared';
+import { SkillSwapSchema, encrypt, decrypt } from '@edusync/shared';
 
 export const listSkills = async (req: Request, res: Response) => {
   try {
     const { campus, query, wantSkill, minKarma } = req.query;
     let filter: any = {};
     
-    // 1. Campus Proximity Filtering
     if (campus) filter.campus = campus;
     
-    // 2. Skill Overlap Matching
     if (query) {
       filter.skills = { $in: [new RegExp(query as string, 'i')] };
     }
     
-    // 3. Karma Thresholding (Guardian Protocol)
     if (minKarma) {
       filter.karma = { $gte: parseInt(minKarma as string) };
     }
 
-    // 4. Weighted Scoring Algorithm
-    // Priorities: Target Skill Match > High Karma (Gold/Platinum) > Reputation Score
     const matchingStudents = await StudentModel.find(filter)
       .sort({ 
         karma: -1, 
@@ -32,11 +27,9 @@ export const listSkills = async (req: Request, res: Response) => {
       .limit(30)
       .select('name skills specialization campus karma avatarUrl reputationScore');
 
-    // 5. Post-Process for Mutual Exchange (Nexus Logic)
-    // In a real prod env, we'd use MongoDB $lookup or $graphLookup for complex matching
     const results = matchingStudents.map((s: any) => ({
       ...s.toObject(),
-      matchScore: (s.karma / 100) + (s.reputationScore * 2) // Simple weighted formula
+      matchScore: (s.karma / 100) + (s.reputationScore * 2)
     }));
 
     res.json(results.sort((a: any, b: any) => b.matchScore - a.matchScore));
@@ -50,7 +43,12 @@ export const getProfile = async (req: Request, res: Response) => {
     const { id } = req.params;
     const student = await StudentModel.findOne({ firebaseUid: id });
     if (!student) return res.status(404).json({ error: 'Student Node Not Found' });
-    res.json(student);
+    
+    // Mask sensitive firebaseUid in public profile response
+    const profile = student.toObject();
+    profile.firebaseUid = encrypt(profile.firebaseUid); // Masking for transit
+    
+    res.json(profile);
   } catch (error) {
     res.status(500).json({ error: 'Profile Retrieval Failure' });
   }
@@ -58,7 +56,7 @@ export const getProfile = async (req: Request, res: Response) => {
 
 export const proposeSwap = async (req: Request, res: Response) => {
   try {
-    const student = req.student; // From auth middleware
+    const student = (req as any).student;
     if (!student) return res.status(401).json({ error: 'Auth Required' });
 
     const validatedBody = SkillSwapSchema.parse({
@@ -66,7 +64,6 @@ export const proposeSwap = async (req: Request, res: Response) => {
       requesterUid: student.uid
     });
 
-    // Verify requester has enough Karma
     const requester = await StudentModel.findOne({ firebaseUid: student.uid });
     if (!requester || requester.karma < validatedBody.karmaStaked) {
       return res.status(403).json({ error: 'Insufficient Karma Balance for Nexus Staking' });
@@ -86,7 +83,7 @@ export const proposeSwap = async (req: Request, res: Response) => {
 
 export const updateProfile = async (req: Request, res: Response) => {
   try {
-    const student = req.student;
+    const student = (req as any).student;
     if (!student) return res.status(401).json({ error: 'Auth Required' });
 
     const updated = await StudentModel.findOneAndUpdate(
