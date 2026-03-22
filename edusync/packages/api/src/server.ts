@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { nexusConnector } from '@edusync/db';
-import router from './router';
+import router from './router.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 

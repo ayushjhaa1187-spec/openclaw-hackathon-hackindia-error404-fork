@@ -1,0 +1,11 @@
+{
+  "name": "@edusync/db",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/nexus-connector.ts",
+  "types": "./src/nexus-connector.ts",
+  "dependencies": {
+    "mongoose": "latest"
+  }
+}

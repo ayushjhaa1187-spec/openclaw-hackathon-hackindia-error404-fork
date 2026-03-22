@@ -9,7 +9,10 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@edusync/db": "*",
+    "@edusync/shared": "*",
     "@google/generative-ai": "^0.24.1",
+    "axios": "^1.13.6",
     "bullmq": "^5.12.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
