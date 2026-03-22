@@ -4,10 +4,12 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Zap, Globe, MessageSquare, BookOpen, Shield, User, Wallet, Building2, ChevronDown } from 'lucide-react';
+import { Zap, Globe, MessageSquare, BookOpen, Shield, User, Wallet, Building2, ChevronDown, Bell } from 'lucide-react';
+import { useNotifications } from '../../hooks/useNotifications';
 
 const TABS = [
   { id: 'dashboard', label: 'Nexus Node', icon: Zap, href: '/dashboard' },
+  { id: 'notifications', label: 'Alerts', icon: Bell, href: '/dashboard/notifications' },
   { id: 'explore', label: 'Explorer', icon: Globe, href: '/dashboard/explore' },
   { id: 'vault', label: 'Vault', icon: BookOpen, href: '/dashboard/vault' },
   { id: 'chat', label: 'Peer Sync', icon: MessageSquare, href: '/dashboard/chat' },
@@ -17,6 +19,7 @@ const TABS = [
 
 export default function NavBar() {
   const pathname = usePathname();
+  const { unreadCount } = useNotifications();
 
   return (
     <nav className="glass-nav px-8 py-4 backdrop-blur-3xl shadow-2xl border-white/5 bg-slate-950/40">
@@ -37,9 +40,18 @@ export default function NavBar() {
                 <Link
                   key={tab.id}
                   href={tab.href}
-                  className={`nav-link ${isActive ? 'nav-link-active' : ''} outline-none`}
+                  className={`nav-link ${isActive ? 'nav-link-active' : ''} outline-none relative`}
                 >
                   <tab.icon size={18} className={isActive ? 'text-indigo-400' : ''} />
+                  {tab.id === 'notifications' && unreadCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute top-1 left-5 min-w-[14px] h-[14px] px-1 bg-rose-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border border-slate-950 shadow-lg shadow-rose-500/20"
+                    >
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </motion.span>
+                  )}
                   <span className="text-[10px] font-black uppercase tracking-widest leading-none">{tab.label}</span>
                 </Link>
               );

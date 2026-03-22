@@ -11,7 +11,7 @@ const navItems = [
   { name: 'Explorers', href: '/dashboard/nexus', icon: Globe },
   { name: 'Swap Inbox', href: '/dashboard/swap/inbox', icon: MessageSquare },
   { name: 'Outbox', href: '/dashboard/swap/outbox', icon: Zap },
-  { name: 'Vault', href: '/dashboard/vault', icon: Database },
+  { name: 'Knowledge Vault', href: '/dashboard/vault', icon: Database },
   { name: 'Redeem', href: '/dashboard/wallet', icon: ShoppingBag },
   { name: 'Admin Console', href: '/dashboard/admin/mou', icon: ShieldCheck },
 ];

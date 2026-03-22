@@ -1,154 +1,290 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { BookOpen, Search, Upload, Download, Star, Filter, Folder, ArrowRight, ShieldCheck, Zap, Info } from 'lucide-react';
-import { useVault } from '../../hooks/useVault';
+import React, { useEffect, useState } from 'react';
+import { 
+  Compass, Search, Zap, Plus, FileText, Video, 
+  Archive, ImageIcon, ShieldCheck, Star, Download, 
+  ChevronRight, BookOpen, Lock, Clock, AlertCircle,
+  RefreshCcw, CheckCircle, XCircle, MoreVertical
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { useVault } from '../../../hooks/useVault';
+import { useSession } from 'next-auth/react';
+import { formatDistanceToNow } from 'date-fns';
 
-export default function VaultPage() {
-  const { resources, loading, fetchResources, purchaseAsset } = useVault();
-  const [searchQuery, setSearchQuery] = useState('');
+export default function KnowledgeVaultPage() {
+  const { data: session } = useSession();
+  const { resources, loading, fetchResources, resubmitAsset } = useVault();
   
-  useEffect(() => {
-    fetchResources(searchQuery);
-  }, [searchQuery]);
+  const [activeTab, setActiveTab] = useState<'explorer' | 'my-submissions'>('explorer');
+  const [search, setSearch] = useState('');
+  const [useAiSearch, setUseAiSearch] = useState(false);
+  
+  // Resubmit Modal State
+  const [resubmitTarget, setResubmitTarget] = useState<any>(null);
+  const [resubmitData, setResubmitData] = useState({ title: '', description: '', tags: '' });
 
-  const handlePurchase = async (id: string) => {
+  const handleSearch = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    fetchResources(search, useAiSearch);
+  };
+
+  useEffect(() => {
+    fetchResources('', false);
+  }, [fetchResources]);
+
+  const projects = activeTab === 'explorer' 
+    ? resources.filter(r => r.verification?.status === 'verified' || r.ownerUid === session?.user?.email) // Email used for UID in some sessions
+    : resources.filter(r => r.ownerUid === (session?.user as any)?.uid || r.ownerUid === session?.user?.email);
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'PDF': return <FileText size={20} />;
+      case 'Video': return <Video size={20} />;
+      case 'Archive': return <Archive size={20} />;
+      default: return <ImageIcon size={20} />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'verified': return <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded uppercase text-[8px] font-black italic">Certified</span>;
+      case 'rejected': return <span className="px-2 py-0.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded uppercase text-[8px] font-black italic">Rejected</span>;
+      case 'changes_requested': return <span className="px-2 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded uppercase text-[8px] font-black italic">Changes Requested</span>;
+      case 'under_review': return <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 rounded uppercase text-[8px] font-black italic animate-pulse">Reviewing...</span>;
+      default: return <span className="px-2 py-0.5 bg-slate-500/10 text-slate-500 border border-slate-500/20 rounded uppercase text-[8px] font-black italic">Pending</span>;
+    }
+  };
+
+  const startResubmit = (resource: any) => {
+    setResubmitTarget(resource);
+    setResubmitData({ 
+      title: resource.title, 
+      description: resource.description, 
+      tags: (resource.tags || []).join(', ') 
+    });
+  };
+
+  const handleResubmit = async () => {
+    if (!resubmitTarget) return;
     try {
-      const res = await purchaseAsset(id);
-      alert(`Success! File ready at: ${res.fileUrl}`);
-    } catch (err) {
-      alert(err);
+      await resubmitAsset(resubmitTarget._id, {
+        ...resubmitData,
+        tags: resubmitData.tags.split(',').map(t => t.trim()).filter(Boolean)
+      });
+      setResubmitTarget(null);
+      fetchResources();
+    } catch (e) {
+      console.error(e);
     }
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.98 }} 
-      animate={{ opacity: 1, scale: 1 }} 
-      className="p-8 space-y-12 max-w-[1600px] mx-auto min-h-screen"
-    >
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 mb-12">
-        <div className="space-y-6">
-           <div className="flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
-              <h1 className="text-5xl font-black text-white tracking-tighter uppercase italic leading-none">Knowledge Vault</h1>
-           </div>
-           <p className="text-slate-400 text-xl font-medium max-w-3xl leading-relaxed tracking-tight">
-             Access a decentralized repository of <span className="text-indigo-400 font-bold uppercase italic font-bold">Curated Institutional Intel</span> across the Nexus network.
-           </p>
+    <div className="p-8 space-y-8 max-w-7xl mx-auto min-h-screen">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/5 pb-8">
+        <div>
+          <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter flex items-center gap-3">
+             <Compass className="text-indigo-500" /> Knowledge Vault
+          </h1>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-2 italic">Institutional Intelligence Marketplace</p>
+          
+          <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 mt-6 w-fit">
+            <button 
+              onClick={() => setActiveTab('explorer')}
+              className={`px-6 py-2 rounded-lg text-xs font-black uppercase italic transition-all ${activeTab === 'explorer' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-white'}`}
+            >
+              Nexus Explorer
+            </button>
+            <button 
+              onClick={() => setActiveTab('my-submissions')}
+              className={`px-6 py-2 rounded-lg text-xs font-black uppercase italic transition-all ${activeTab === 'my-submissions' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-white'}`}
+            >
+              My Contributions
+            </button>
+          </div>
         </div>
-
-        <div className="flex items-center gap-4">
-           <div className="flex flex-col items-end pr-6 border-r border-white/10 group cursor-pointer hover:border-indigo-500/30 transition-all">
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Karma Incentive</span>
-              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic group-hover:text-white transition-colors leading-none mt-1">Earn on Uploads</span>
-           </div>
-           <button className="btn-primary font-black text-[10px] uppercase tracking-[0.3em] px-10 relative group overflow-hidden shadow-2xl shadow-indigo-600/20 leading-none outline-none">
-              <div className="absolute inset-x-[-100%] inset-y-0 bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-shine" />
-              <Upload size={20} /> Upload Resource
-           </button>
+        
+        <div className="flex gap-4 w-full md:w-auto self-end">
+           <form onSubmit={handleSearch} className="relative flex-1 md:w-96 flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                <input 
+                  type="text" 
+                  placeholder={useAiSearch ? "Describe what you want to learn..." : "Search resources, tags..."}
+                  className={`w-full bg-white/5 border ${useAiSearch ? 'border-indigo-500/50 ring-1 ring-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.1)]' : 'border-white/10'} rounded-2xl py-3 pl-12 pr-4 text-white text-sm outline-none transition-all`}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
+              <button 
+                type="button"
+                onClick={() => setUseAiSearch(!useAiSearch)}
+                className={`p-3 rounded-2xl border transition-all flex items-center justify-center gap-2 group ${useAiSearch ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/40' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
+              >
+                <Zap size={18} className={useAiSearch ? 'fill-current' : 'group-hover:text-indigo-400 text-slate-600'} />
+              </button>
+           </form>
+           <Link 
+              href="/dashboard/vault/upload"
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl flex items-center gap-2"
+           >
+             <Plus size={16} /> Contribute
+           </Link>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 items-start">
-        <aside className="lg:col-span-1 space-y-8 glass-card p-8 bg-slate-900/40 border-white/5 sticky top-32 shadow-2xl">
-           <div className="space-y-8">
-              <div className="space-y-4">
-                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Asset Search</label>
-                 <div className="relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+      {/* Grid Content */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <AnimatePresence mode="popLayout">
+          {projects.map((resource: any, i: number) => (
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              key={resource._id}
+              className={`glass-card group border-white/5 bg-slate-900/40 hover:bg-slate-900/60 transition-all flex flex-col h-full overflow-hidden ${resource.verification?.status === 'changes_requested' ? 'ring-1 ring-amber-500/30' : ''}`}
+            >
+              <div className="p-6 space-y-4 flex-1">
+                <div className="flex justify-between items-start">
+                  <div className="p-3 rounded-2xl bg-white/5 text-indigo-400 border border-white/10 group-hover:scale-110 transition-transform">
+                    {getIcon(resource.fileType)}
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                     {activeTab === 'explorer' && resource.verification?.status === 'verified' && (
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[8px] font-black uppercase text-emerald-500 italic shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                          <ShieldCheck size={10} /> Guardian Certified
+                        </div>
+                     )}
+                     {activeTab === 'my-submissions' && getStatusBadge(resource.verification?.status)}
+                  </div>
+                </div>
+
+                <div>
+                   <h3 className="text-lg font-black text-white uppercase italic tracking-tight line-clamp-1 group-hover:text-indigo-400 transition-colors">{resource.title}</h3>
+                   <div className="flex items-center gap-2 mt-1">
+                      <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest italic flex items-center gap-1">
+                        <Clock size={10} /> {formatDistanceToNow(new Date(resource.createdAt))} ago
+                      </p>
+                      <span className="text-slate-700">•</span>
+                      <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest italic">
+                        By {resource.ownerUid === session?.user?.email ? 'You' : `@${resource.ownerUid?.slice(0, 6)}`}
+                      </p>
+                   </div>
+                </div>
+
+                <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 italic font-medium">
+                  {resource.description}
+                </p>
+
+                {activeTab === 'my-submissions' && resource.verification?.status === 'changes_requested' && (
+                  <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl space-y-2">
+                     <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest flex items-center gap-2">
+                        <AlertCircle size={12} /> Feedback:
+                     </p>
+                     <p className="text-[10px] text-slate-400 italic leading-relaxed">
+                        {resource.verification?.changesRequested || "Adjust parameters as requested."}
+                     </p>
+                     <button 
+                        onClick={() => startResubmit(resource)}
+                        className="w-full py-2 bg-amber-500 text-black text-[9px] font-black uppercase tracking-[0.2em] rounded-lg hover:bg-amber-400 transition-all flex items-center justify-center gap-2"
+                     >
+                        <RefreshCcw size={12} /> Update & Re-submit
+                     </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 border-t border-white/5 bg-white/[0.02] flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 text-amber-500 text-[10px] font-black uppercase tracking-widest italic tabular-nums">
+                    <Star size={12} className="fill-current" /> {resource.karmaCost}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-500 text-[10px] font-black uppercase tracking-widest tabular-nums">
+                    <Download size={12} /> {resource.downloads}
+                  </div>
+                </div>
+                
+                <Link 
+                  href={`/dashboard/vault/${resource._id}`}
+                  className="px-4 py-2 bg-white/5 hover:bg-indigo-600 text-[10px] font-black uppercase tracking-tighter italic rounded-xl border border-white/10 hover:border-indigo-500 transition-all flex items-center gap-2"
+                >
+                  Details <ChevronRight size={12} />
+                </Link>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {projects.length === 0 && !loading && (
+        <div className="py-32 flex flex-col items-center justify-center text-center opacity-30">
+          <BookOpen size={64} className="text-slate-700 mb-6" />
+          <p className="text-slate-500 font-black uppercase tracking-[0.3em] italic">The Vault is Silent</p>
+        </div>
+      )}
+
+      {/* Resubmit Modal */}
+      <AnimatePresence>
+        {resubmitTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.9 }}
+               animate={{ opacity: 1, scale: 1 }}
+               exit={{ opacity: 0, scale: 0.9 }}
+               className="glass-card w-full max-w-lg p-8 border-white/10 bg-slate-900/90 shadow-2xl relative"
+            >
+               <button onClick={() => setResubmitTarget(null)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors">
+                  <XCircle size={24} />
+               </button>
+               
+               <header className="mb-8">
+                  <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter flex items-center gap-3">
+                     <RefreshCcw className="text-amber-500" /> Resubmit Protocol
+                  </h2>
+                  <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-1 italic">Knowledge Optimization Session</p>
+               </header>
+
+               <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">New Title</label>
                     <input 
                       type="text" 
-                      placeholder="Course Code, Topic..." 
-                      className="w-full pl-12 pr-4 py-4 bg-slate-950/50 border border-white/10 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all placeholder:text-slate-700 outline-none"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      value={resubmitData.title}
+                      onChange={e => setResubmitData({...resubmitData, title: e.target.value})}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:ring-1 focus:ring-amber-500 transition-all italic font-medium"
                     />
-                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                 {[
-                   { label: 'PDFs', count: 124 },
-                   { label: 'Videos', count: 42 },
-                   { label: 'Past Papers', count: 89 },
-                   { label: 'Projects', count: 12 },
-                 ].map((cat, i) => (
-                    <div key={i} className="flex flex-col gap-1 p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-indigo-500/30 transition-all cursor-pointer group hover:bg-white/10 shadow-lg">
-                       <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 group-hover:text-indigo-400 transition-colors leading-none">{cat.label}</span>
-                       <span className="text-xl font-black text-white tracking-widest leading-none mt-1">{cat.count}</span>
-                    </div>
-                 ))}
-              </div>
-           </div>
-        </aside>
-
-        <section className="lg:col-span-3 space-y-8">
-           <div className="flex justify-between items-center mb-4 px-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 leading-none">Global Nexus Directory • {loading ? 'Uplink active...' : `${resources.length} active assets`}</span>
-              <div className="flex gap-4 items-center">
-                 <div className="flex items-center gap-2 group cursor-pointer">
-                    <Zap size={14} className="text-amber-400" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-white transition-colors tracking-[0.2em] italic">Featured Only</span>
-                 </div>
-              </div>
-           </div>
-
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {resources.map((resource: any, i: number) => (
-                <motion.div
-                  key={resource._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="glass-card group overflow-hidden border-white/5 bg-slate-900/40 relative hover:border-indigo-500/30 transition-all h-[340px] flex flex-col justify-between shadow-2xl"
-                >
-                  <div className="p-8 pb-4 relative z-10">
-                    <div className="flex justify-between items-start mb-6">
-                       <div className="p-4 bg-white/5 border border-white/10 rounded-2xl text-indigo-400 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(99,102,241,0.2)] transition-all">
-                          <BookOpen size={28} className="group-hover:rotate-6 transition-transform" />
-                       </div>
-                       <div className="flex flex-col items-end">
-                          <div className={resource.verified ? "verified-badge uppercase italic px-4 py-1.5 shadow-[0_0_15px_rgba(16,185,129,0.1)] border border-emerald-500/20" : "px-4 py-1.5 bg-slate-500/10 text-slate-500 border border-slate-500/20 rounded text-[10px] font-black uppercase italic tracking-widest"}>
-                            {resource.verified ? "Certified Asset" : "Community Shared"}
-                          </div>
-                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-2">{resource.fileType} Protocol</span>
-                       </div>
-                    </div>
-
-                    <h4 className="text-2xl font-black text-white tracking-tighter uppercase italic leading-tight mb-2 group-hover:text-indigo-400 transition-colors">
-                      {resource.title}
-                    </h4>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 italic">
-                       {resource.campus} • <span className="text-slate-200">Owner ID: {resource.ownerUid.split('-')[0]}</span>
-                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Optimized Description</label>
+                    <textarea 
+                      value={resubmitData.description}
+                      onChange={e => setResubmitData({...resubmitData, description: e.target.value})}
+                      className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:ring-1 focus:ring-amber-500 transition-all italic font-medium resize-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Taxonomy Tags (Comma Separated)</label>
+                    <input 
+                      type="text" 
+                      value={resubmitData.tags}
+                      onChange={e => setResubmitData({...resubmitData, tags: e.target.value})}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:ring-1 focus:ring-amber-500 transition-all italic font-medium"
+                    />
                   </div>
 
-                  <div className="p-8 pt-4 bg-white/5 border-t border-white/5 flex items-center justify-between mt-auto relative z-10 shadow-inner">
-                    <div className="flex items-center gap-3">
-                       <div className="karma-chip shadow-[0_0_20px_rgba(245,158,11,0.1)] bg-amber-500/20 border-amber-500/30 px-5 py-2">
-                          <Star size={14} className="fill-current" /> {resource.karmaCost} <span className="opacity-50 text-[8px] uppercase tracking-widest ml-1 leading-none italic">Tokens</span>
-                       </div>
-                    </div>
-                    <button 
-                      onClick={() => handlePurchase(resource._id)}
-                      className="btn-primary group !bg-white/5 !text-slate-400 hover:!bg-indigo-600 hover:!text-white border border-white/10 hover:border-indigo-500 transition-all px-8 text-[11px] font-black uppercase italic tracking-widest leading-none outline-none ring-0"
-                    >
-                       Purchase <Download size={14} className="group-hover:translate-y-0.5 transition-transform" />
-                    </button>
-                  </div>
-
-                  {resource.campus !== 'IIT_JAMMU' && (
-                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity pointer-events-none -rotate-12 translate-x-1/3 -translate-y-1/3">
-                       <Zap size={300} className="text-indigo-400" />
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-           </div>
-        </section>
-      </div>
-    </motion.div>
+                  <button 
+                    onClick={handleResubmit}
+                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-indigo-600/10 mt-4"
+                  >
+                    Authorize Resubmission & Encrypt
+                  </button>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

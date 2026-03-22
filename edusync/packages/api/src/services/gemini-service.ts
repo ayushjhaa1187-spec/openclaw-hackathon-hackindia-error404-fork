@@ -32,7 +32,6 @@ export class GeminiService {
 
   /**
    * Semantic Matching: Simplified vector-like matching using LLM reasoning.
-   * Can be upgraded to real embeddings via 'text-embedding-004'.
    */
   static async matchSkillIntent(query: string, availableSkills: string[]): Promise<string[]> {
     try {
@@ -67,7 +66,29 @@ export class GeminiService {
       const response = await result.response;
       return JSON.parse(response.text());
     } catch (error) {
-      return { isSafe: true }; // Default to safe if AI fails
+      return { isSafe: true }; 
+    }
+  }
+
+  /**
+   * Resource Semantic Match: Identifies relevant educational materials based on intent.
+   */
+  static async matchResourceIntent(query: string, resources: { id: string; title: string; description: string }[]): Promise<string[]> {
+    try {
+      const resourceContext = resources.map(r => `[ID: ${r.id}] ${r.title}: ${r.description}`).join("\n");
+      const prompt = `User search query: "${query}"
+      From the following list of educational resources, identify the IDs of those that are semantically related:
+      ${resourceContext}
+      
+      Return only the matching IDs as a comma-separated list. If none match, return "None".`;
+
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text().trim();
+      return text === "None" ? [] : text.split(",").map(id => id.trim());
+    } catch (error) {
+      console.error("Gemini Error (Resource Match):", error);
+      return [];
     }
   }
 }

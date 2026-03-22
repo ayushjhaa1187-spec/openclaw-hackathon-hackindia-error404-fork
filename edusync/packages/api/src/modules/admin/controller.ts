@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { StudentModel, ResourceModel } from '@edusync/db';
 import { GeminiService } from '../../services/gemini-service.js';
+import { NotificationService } from '../notifications/service.js';
 
 export const getSystemStats = async (req: Request, res: Response) => {
   try {
@@ -36,11 +37,47 @@ export const getModerationQueue = async (req: Request, res: Response) => {
 
 export const resolveFlag = async (req: Request, res: Response) => {
   try {
-    const { flagId, action } = req.body;
-    // Resolve logic: Update Nexus Audit Log
+    const { flagId, action, resourceId, adminNotes } = req.body;
+    
+    // Resource Moderation Path
+    if (resourceId) {
+      const resource = await ResourceModel.findById(resourceId);
+      if (!resource) return res.status(404).json({ error: 'Resource not found' });
+
+      if (action === 'approve') {
+        resource.verification = { status: 'verified', adminUid: (req as any).student.uid, adminNotes };
+        await resource.save();
+        await NotificationService.create(resource.ownerUid, 'resource_certified', {
+          title: resource.title,
+          resourceId: resource._id
+        });
+      } else if (action === 'reject') {
+        resource.verification = { status: 'rejected', adminUid: (req as any).student.uid, adminNotes };
+        await resource.save();
+        await NotificationService.create(resource.ownerUid, 'resource_rejected', {
+          title: resource.title,
+          reason: adminNotes,
+          resourceId: resource._id
+        });
+      }
+    }
+
     res.json({ message: `Guardian Protocol: Flag ${flagId} Resolved via ${action}`, timestamp: new Date() });
-  } catch (err) {
-    res.status(500).json({ error: 'Resolution Sync Failure' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Resolution Sync Failure' });
+  }
+};
+
+export const issueWarning = async (req: Request, res: Response) => {
+  try {
+    const { studentUid, swapId, reason } = req.body;
+    await NotificationService.create(studentUid, 'guardian_warning', {
+      swapId,
+      reason
+    });
+    res.json({ success: true, message: 'Warning issued to student' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Warning issue failure' });
   }
 };
 

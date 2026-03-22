@@ -3,10 +3,10 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Check, X, Zap, Clock, Star, ArrowRight } from 'lucide-react';
-import { useNexus } from '../../../hooks/useNexus';
+import { useNexus } from '../../../../hooks/useNexus';
 
 export default function SwapInboxPage() {
-  const { swaps, fetchSwaps, acceptSwap, rejectSwap, completeSwap } = useNexus();
+  const { swaps, fetchSwaps, acceptSwap, rejectSwap, completeSwap, requestCancel } = useNexus();
 
   useEffect(() => {
     fetchSwaps('pending'); // Initialize with pending
@@ -88,12 +88,27 @@ export default function SwapInboxPage() {
                     </>
                   )}
                   {swap.status === 'accepted' && (
-                    <button 
-                      onClick={() => completeSwap(swap._id)}
-                      className="px-6 py-3 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20 flex items-center gap-2 active:scale-95"
-                    >
-                      Complete Session <ArrowRight size={14} />
-                    </button>
+                    <div className="flex flex-col items-end gap-2">
+                       <button 
+                         onClick={() => completeSwap(swap._id)}
+                         className="px-6 py-3 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20 flex items-center gap-2 active:scale-95"
+                       >
+                         Complete Session <ArrowRight size={14} />
+                       </button>
+
+                       {swap.cancelRequestedBy ? (
+                         <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[8px] font-black uppercase text-amber-500 italic animate-pulse">
+                           <Clock size={10} /> Waiting for Peer Consent
+                         </div>
+                       ) : (
+                         <button 
+                           onClick={() => requestCancel(swap._id)}
+                           className="text-[8px] font-black uppercase text-slate-500 hover:text-red-400 transition-colors italic tracking-widest underline decoration-dotted underline-offset-4"
+                         >
+                           Request Cancellation
+                         </button>
+                       )}
+                    </div>
                   )}
                 </div>
               </div>

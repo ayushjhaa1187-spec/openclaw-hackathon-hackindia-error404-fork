@@ -1,7 +1,9 @@
 import { SwapModel, nexusConnector } from '@edusync/db';
 import { KarmaService } from '../karma/service.js';
+import { NotificationService } from '../notifications/service.js';
 import { getIO } from '../../socket.js';
 import { v4 as uuidv4 } from 'uuid';
+import { AnalyticsService } from '../analytics/service.js';
 
 export class SwapService {
   /**
@@ -49,12 +51,22 @@ export class SwapService {
       });
     }
 
-    // 4. Emit Socket.io notification
+    // 4. Notifications
+    await NotificationService.create(input.providerUid, 'swap_request_received', {
+      name: 'A user', // Placeholder for now, or I can refine. 
+      skill: input.skill,
+      swapId: swap._id
+    });
+
     getIO().to(`user:${input.providerUid}`).emit('swap:new_request', {
       swapId: swap._id,
       requesterUid: input.requesterUid,
       skill: input.skill
     });
+    
+    // Invalidate analytics (initiated swaps)
+    await AnalyticsService.invalidateCache(input.requesterCampus);
+    if (input.isCrossCampus) await AnalyticsService.invalidateCache(input.providerCampus);
 
     return swap;
   }
@@ -81,6 +93,11 @@ export class SwapService {
       });
     }
 
+    await NotificationService.create(swap.requesterUid, 'swap_accepted', {
+      name: 'The provider', 
+      swapId
+    });
+
     getIO().to(`user:${swap.requesterUid}`).emit('swap:accepted', { swapId });
     return swap;
   }
@@ -106,6 +123,13 @@ export class SwapService {
       reason: `Swap Refund (Rejected): ${swapId}`,
       institutionalNode: (swap as any).requesterCampus
     });
+
+    await NotificationService.create(swap.requesterUid, 'swap_rejected', {
+      name: 'The provider',
+      swapId
+    });
+
+    await AnalyticsService.invalidateCache((swap as any).requesterCampus);
 
     getIO().to(`user:${swap.requesterUid}`).emit('swap:rejected', { swapId });
     return swap;
@@ -143,9 +167,15 @@ export class SwapService {
       });
     }
 
+    await NotificationService.create(swap.requesterUid, 'swap_completed', { name: 'The provider', swapId });
+    await NotificationService.create(swap.providerUid, 'swap_completed', { name: 'The requester', swapId });
+
     getIO().to(`user:${swap.requesterUid}`).emit('swap:completed', { swapId });
     getIO().to(`user:${swap.providerUid}`).emit('swap:completed', { swapId });
     
+    await AnalyticsService.invalidateCache((swap as any).providerCampus);
+    if (swap.isCrossCampus) await AnalyticsService.invalidateCache((swap as any).requesterCampus);
+
     return swap;
   }
 
@@ -153,6 +183,128 @@ export class SwapService {
    * cancelSwap (in-progress cancellation) deferred to Session 4.
    * Handles accepted swaps that are abandoned.
    */
+
+  /**
+   * Atomic cancellation request handling.
+   */
+  static async requestCancel(swapId: string, callerUid: string) {
+    // 1. Atomic conditional update to set cancelRequestedBy
+    const swap = await SwapModel.findOneAndUpdate(
+      {
+        _id: swapId,
+        cancelRequestedBy: { $exists: false }, // only if not yet set
+        status: 'accepted'
+      },
+      { $set: { cancelRequestedBy: callerUid } },
+      { new: true }
+    );
+
+    if (swap) {
+      // First person requesting
+      const otherPeer = swap.requesterUid === callerUid ? swap.providerUid : swap.requesterUid;
+      
+      await NotificationService.create(otherPeer, 'swap_cancel_requested', { name: 'Your peer', swapId });
+      
+      getIO().to(`user:${otherPeer}`).emit('swap:cancel_requested', { swapId, requestedBy: callerUid });
+      return swap;
+    }
+
+    // 2. If swap was NOT updated, either it's already mutual, doesn't exist, or wrong status
+    const current = await SwapModel.findById(swapId);
+    if (!current) throw new Error('Swap not found');
+    if (current.status !== 'accepted') throw new Error('Invalid status for cancellation');
+
+    if (current.cancelRequestedBy && current.cancelRequestedBy !== callerUid) {
+      // MUTUAL CONSENT REACHED
+      current.status = 'canceled';
+      await current.save();
+
+      // Refund requester from Escrow
+      await KarmaService.recordTransaction({
+        fromUid: 'KARMA_ESCROW',
+        toUid: current.requesterUid,
+        amount: current.karmaStaked,
+        reason: `Mutual Cancellation: ${swapId}`,
+        institutionalNode: (current as any).requesterCampus
+      });
+
+      if (current.isCrossCampus) {
+        await this.logTransparency(swapId, {
+          requester_id: current.requesterUid,
+          responder_id: current.providerUid,
+          requester_campus_id: (current as any).requesterCampus,
+          responder_campus_id: (current as any).providerCampus,
+          action: 'swap_canceled_mutual'
+        });
+      }
+
+      await NotificationService.create(current.requesterUid, 'swap_canceled_mutual', {
+        amount: current.karmaStaked, 
+        swapId
+      });
+      await NotificationService.create(current.providerUid, 'swap_canceled_mutual', {
+        swapId
+      });
+
+      getIO().to(`user:${current.requesterUid}`).emit('swap:canceled_mutual', { swapId, karmaRefunded: current.karmaStaked });
+      getIO().to(`user:${current.providerUid}`).emit('swap:canceled_mutual', { swapId });
+      
+      return current;
+    }
+
+    throw new Error('Action already initiated or unauthorized');
+  }
+
+  /**
+   * Administrative override for conflicted or stale swaps.
+   */
+  static async adminOverrideSwap(swapId: string, action: 'force_refund' | 'force_payout', adminUid: string, notes: string) {
+    const swap = await SwapModel.findById(swapId);
+    if (!swap) throw new Error('Swap not found');
+
+    if (action === 'force_refund') {
+      swap.status = 'canceled';
+      await KarmaService.recordTransaction({
+        fromUid: 'KARMA_ESCROW',
+        toUid: swap.requesterUid,
+        amount: swap.karmaStaked,
+        reason: `Admin Force Refund: ${notes}`,
+        institutionalNode: (swap as any).requesterCampus
+      });
+    } else {
+      // Force Payout sets status to 'disputed' to preserve organic metrics
+      swap.status = 'disputed';
+      await KarmaService.recordTransaction({
+        fromUid: 'KARMA_ESCROW',
+        toUid: swap.providerUid,
+        amount: swap.karmaStaked,
+        reason: `Admin Force Payout: ${notes}`,
+        institutionalNode: (swap as any).providerCampus
+      });
+    }
+
+    swap.adminNotes = `[${adminUid}] ${notes}`;
+    await swap.save();
+
+    // Admin overrides are ALWAYS logged to the transparency log for auditability
+    if (swap.isCrossCampus) {
+      await this.logTransparency(swapId, {
+        requester_id: swap.requesterUid,
+        responder_id: swap.providerUid,
+        requester_campus_id: (swap as any).requesterCampus,
+        responder_campus_id: (swap as any).providerCampus,
+        action: `admin_${action}`
+      });
+    }
+
+    await NotificationService.create(swap.requesterUid, 'swap_admin_resolved', { swapId });
+    await NotificationService.create(swap.providerUid, 'swap_admin_resolved', { swapId });
+
+    getIO().to(`user:${swap.requesterUid}`).emit('swap:admin_resolved', { swapId, action, notes });
+    getIO().to(`user:${swap.providerUid}`).emit('swap:admin_resolved', { swapId, action, notes });
+    
+    return swap;
+  }
 
   static async getSwapsByUser(uid: string, status?: string, limit = 20) {
     const query: any = { $or: [{ requesterUid: uid }, { providerUid: uid }] };

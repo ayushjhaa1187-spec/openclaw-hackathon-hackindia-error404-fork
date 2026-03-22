@@ -74,4 +74,27 @@ export class SwapController {
       res.status(404).json({ success: false, error: error.message });
     }
   }
+
+  static async requestCancel(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const student = (req as any).student;
+      const swap = await SwapService.requestCancel(id, student.uid);
+      res.json({ success: true, data: swap });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
+
+  static async adminOverride(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { action, notes } = req.body;
+      const student = (req as any).student;
+      const swap = await SwapService.adminOverrideSwap(id, action, student.uid, notes);
+      res.json({ success: true, data: swap });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
 }

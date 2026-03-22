@@ -2,6 +2,7 @@ import { nexusConnector } from '@edusync/db';
 import { KarmaTransaction } from '@edusync/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { redis } from '../../services/redis-service.js';
+import { AnalyticsService } from '../analytics/service.js';
 
 export class KarmaService {
   /**
@@ -51,6 +52,11 @@ export class KarmaService {
       // 2. Invalidate Redis cache for both parties
       await redis.del(`karma:balance:${tx.fromUid}`);
       await redis.del(`karma:balance:${tx.toUid}`);
+
+      // 3. Invalidate analytics cache for the campus
+      if (node !== 'NEXUS_SYSTEM') {
+        await AnalyticsService.invalidateCache(node);
+      }
 
       return res.rows[0];
     } catch (error) {

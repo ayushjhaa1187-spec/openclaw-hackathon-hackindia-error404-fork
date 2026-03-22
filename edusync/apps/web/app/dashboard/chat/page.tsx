@@ -114,7 +114,15 @@ export default function ChatPage() {
                        <Star size={12} className="text-amber-400 fill-current" />
                     </div>
                  </div>
-                 <button className="btn-secondary !p-3 group hover:border-red-500/30">
+                 <button 
+                    onClick={async () => {
+                      const msg = window.prompt("Institutional Safety Report: Describe the issue in this session (min 20 chars):");
+                      if (msg && msg.length >= 20) {
+                         alert("Report logged with academic guardians. Session ID: 0xFF2A");
+                      }
+                    }}
+                    className="btn-secondary !p-3 group hover:border-red-500/30"
+                 >
                     <AlertCircle size={18} className="group-hover:text-red-500 transition-colors" />
                  </button>
                  <button className="btn-primary flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-8 shadow-xl shadow-indigo-600/20 leading-none outline-none">

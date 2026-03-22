@@ -2,16 +2,16 @@ import { useState } from 'react';
 import apiClient from '../lib/api-client';
 
 export function useVault() {
-  const [resources, setResources] = useState([]);
+  const [resources, setResources] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchResources = async (query = '', campus = '', type = '') => {
+  const fetchResources = async (query = '', aiSearch = false, fileType = '') => {
     setLoading(true);
     try {
-      const { data } = await apiClient.get('/vault', {
-        params: { query, campus, type }
-      });
-      setResources(data);
+      const endpoint = aiSearch ? '/vault/search/ai' : '/vault';
+      const params = aiSearch ? { q: query } : { search: query, fileType };
+      const { data } = await apiClient.get(endpoint, { params });
+      setResources(data.data || []);
     } catch (error) {
       console.error('Vault Retrieval Error:', error);
     } finally {
@@ -19,23 +19,55 @@ export function useVault() {
     }
   };
 
+  const getResourceById = async (id: string) => {
+    try {
+      const { data } = await apiClient.get(`/vault/${id}`);
+      return data.data;
+    } catch (error) {
+      console.error('Resource Fetch Error:', error);
+      return null;
+    }
+  };
+
   const purchaseAsset = async (resourceId: string) => {
     try {
       const { data } = await apiClient.post(`/vault/purchase/${resourceId}`);
-      return data;
-    } catch (error) {
-      throw new Error('Transaction Denied: Check Karma Balance');
+      if (data.success) return data.data;
+      throw new Error(data.error);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Transaction Denied: Check Karma Balance');
     }
   };
 
-  const uploadAsset = async (formData: any) => {
+  const uploadAsset = async (formData: FormData) => {
     try {
-      const { data } = await apiClient.post('/vault/upload', formData);
+      const { data } = await apiClient.post('/vault/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       return data;
-    } catch (error) {
-      throw new Error('Upload Protocol Failure');
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Upload Protocol Failure');
     }
   };
 
-  return { resources, loading, fetchResources, purchaseAsset, uploadAsset };
+  const resubmitAsset = async (id: string, metadata: any) => {
+    try {
+      const { data } = await apiClient.post(`/vault/resubmit/${id}`, metadata);
+      return data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Resubmission Failed');
+    }
+  };
+
+  return { 
+    resources, 
+    loading, 
+    fetchResources, 
+    getResourceById, 
+    purchaseAsset, 
+    uploadAsset,
+    resubmitAsset
+  };
 }

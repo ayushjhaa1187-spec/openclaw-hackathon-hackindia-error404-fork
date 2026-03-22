@@ -33,6 +33,27 @@ export default function StudentProfilePage() {
     router.push(`/dashboard/explore?proposal=${id}`);
   };
 
+  const handleReport = async () => {
+    const description = window.prompt("Institutional Safety Report: Please describe the violation (min 20 chars):");
+    if (!description) return;
+    if (description.length < 20) {
+      alert("Report description too short. Please provide more detail.");
+      return;
+    }
+
+    try {
+      await api.post('/guardian/report', {
+        targetId: id,
+        targetType: 'student',
+        description
+      });
+      alert("Report submitted successfully to academic guardians.");
+    } catch (err) {
+      console.error('Report Failure:', err);
+      alert("Institutional relay failure. Please try again.");
+    }
+  };
+
   if (loading) return <div className="p-8 text-indigo-400">Syncing with Nexus Node...</div>;
   if (!student) return <div className="p-8 text-red-400">Student Node Not Found</div>;
 
@@ -88,7 +109,11 @@ export default function StudentProfilePage() {
               <MessageSquare className="mr-2" />
               Propose Skill Swap
             </Button>
-            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800">
+            <Button 
+              variant="outline" 
+              onClick={handleReport}
+              className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-red-400 hover:border-red-500/30 transition-all"
+            >
               <Shield size={20} className="mr-2" />
               Report Profile
             </Button>

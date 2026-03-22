@@ -1,5 +1,17 @@
 import { Pool } from 'pg';
+import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export * from '../mongo/models/core.js';
+export * from '../mongo/models/notification.js';
+export * from '../mongo/models/analytics-snapshot.js';
+export * from '../mongo/models/flag.js';
+export * from '../mongo/models/campus-settings.js';
 
 // Nexus Configuration for Institutional Nodes
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/edusync_nexus_social';
@@ -39,6 +51,24 @@ class NexusNodeDB {
       if (!this.pgPool) {
         this.pgPool = new Pool(POSTGRES_CONFIG);
         await this.pgPool.query('SELECT NOW()'); // Verify handshake
+        
+        // Run SQL Migrations for institutional auditing
+        try {
+          const schemaDir = path.join(__dirname, '..', 'postgres', 'schema');
+          const migrations = ['init.sql', 'admin_actions.sql'];
+          
+          for (const file of migrations) {
+            const sqlPath = path.join(schemaDir, file);
+            if (fs.existsSync(sqlPath)) {
+              const sql = fs.readFileSync(sqlPath, 'utf8');
+              await this.pgPool.query(sql);
+              console.log(`✅ Nexus-Ledger: Migration [${file}] applied.`);
+            }
+          }
+        } catch (migrationError) {
+          console.error('⚠️ Nexus-Ledger Migration Error (non-fatal):', migrationError);
+        }
+
         console.log('✅ Nexus-Node-Ledger: PostgreSQL Immutable Ledger connected.');
       }
     } catch (error) {
