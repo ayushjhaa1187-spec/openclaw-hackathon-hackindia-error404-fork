@@ -86,4 +86,13 @@ pnpm dev
 EduSync is designed for **College Groups (e.g., IITs, NITs)**. Our Admin Hub provides real-time telemetry on cross-campus collaboration, allowing administrators to measure the ROI of institutional partnerships accurately.
 
 ---
+
+## 🔮 Phase 4: AI Genesis (Next Gen)
+We are currently architecting the next evolution of EduSync, focusing on **Cognitive Intelligence**:
+- **Semantic Matchmaking**: Using vector embeddings to find the perfect skill swap based on intent, not just keywords.
+- **AI Writing Assistant**: "Magic Pen" for crafting professional skill listings and resource summaries.
+- **Smart Recommendations**: Predictive learning paths based on academic major and past community interactions.
+- **Autonomous Moderation**: Deep-sentiment analysis to ensure a high-trust institutional environment.
+
+---
 **Build with ❤️ by Team EduSync for the HackIndia Nexus.**

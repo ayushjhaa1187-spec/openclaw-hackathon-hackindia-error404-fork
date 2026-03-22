@@ -91,29 +91,42 @@ export default function DashboardPage() {
 
         <div className="glass-card p-8 border-white/5 flex flex-col justify-between bg-slate-900/40 relative shadow-2xl">
           <div>
-            <h2 className="text-2xl font-black text-white mb-4 italic uppercase tracking-tight shadow-sm">Guardian AI Monitoring</h2>
-            <p className="text-slate-400 text-sm leading-relaxed mb-8 font-medium italic tracking-tight opacity-70">
-              The Nexus protocol implements distributed sentiment analysis and compliance auditing. Your interactions are audited for the safety of our multi-campus partners.
+            <h2 className="text-2xl font-black text-white mb-4 italic uppercase tracking-tight shadow-sm flex items-center gap-2">
+              <Plus className="text-indigo-400" /> AI Magic Pen
+            </h2>
+            <p className="text-slate-400 text-sm leading-relaxed mb-6 font-medium italic tracking-tight opacity-70">
+              Transform your skill swaps into professional offerings with institutional AI assistance.
             </p>
+            
+            <div className="space-y-4 mb-6">
+              <input 
+                type="text" 
+                placeholder="Ex: I can teach React Hooks" 
+                className="w-full bg-slate-950/50 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-all italic"
+              />
+              <button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 transform hover:scale-[1.02] active:scale-95 transition-all">
+                ✨ Generate Professional Listing
+              </button>
+            </div>
           </div>
           
-          <div className="bg-amber-500/5 rounded-2xl p-6 border border-amber-500/10 mb-6 group hover:bg-amber-500/10 transition-all cursor-pointer shadow-inner">
+          <div className="bg-emerald-500/5 rounded-2xl p-6 border border-emerald-500/10 mb-6 group hover:bg-emerald-500/10 transition-all cursor-pointer shadow-inner">
              <div className="flex gap-4 items-start">
-                <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)] group-hover:scale-110 transition-transform">
-                  <Shield size={24} />
+                <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)] group-hover:scale-110 transition-transform">
+                  <Star size={24} />
                 </div>
                 <div>
-                   <h4 className="font-black text-amber-500 leading-tight text-lg uppercase tracking-tight italic">Policy Protocol Active</h4>
-                   <p className="text-sm text-amber-400/70 mt-2 leading-relaxed italic font-black uppercase tracking-widest text-[9px] leading-tight">
-                     "Autonomous NLP Guardian AI is monitoring local and cross-campus knowledge transfers for institutional compliance."
+                   <h4 className="font-black text-emerald-500 leading-tight text-lg uppercase tracking-tight italic">Semantic Matching Active</h4>
+                   <p className="text-sm text-emerald-400/70 mt-2 leading-relaxed italic font-black uppercase tracking-widest text-[9px] leading-tight">
+                     "Your profile embeddings are synced with the Nexus Brain for intelligent cross-campus discoverability."
                    </p>
                 </div>
              </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Link href="/dashboard/admin" className="btn-secondary text-[10px] uppercase font-black tracking-[0.2em] py-4 hover:border-indigo-500/30 outline-none">View Compliance</Link>
-            <button className="btn-secondary text-[10px] uppercase font-black tracking-[0.2em] py-4 bg-white/[0.02]">Security Keys</button>
+            <Link href="/dashboard/nexus" className="btn-secondary text-[10px] uppercase font-black tracking-[0.2em] py-4 hover:border-indigo-500/30 outline-none">Open Nexus Brain</Link>
+            <button className="btn-secondary text-[10px] uppercase font-black tracking-[0.2em] py-4 bg-white/[0.02]">AI Lab Logs</button>
           </div>
         </div>
       </section>
