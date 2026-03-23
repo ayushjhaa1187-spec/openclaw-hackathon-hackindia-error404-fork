@@ -12,6 +12,8 @@ export * from '../mongo/models/notification.js';
 export * from '../mongo/models/analytics-snapshot.js';
 export * from '../mongo/models/flag.js';
 export * from '../mongo/models/campus-settings.js';
+export * from '../mongo/models/error-report.js';
+export * from '../mongo/models/college-group.js';
 
 // Nexus Configuration for Institutional Nodes
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/edusync_nexus_social';

@@ -19,8 +19,9 @@ export class SwapService {
     requesterCampus: string;
     providerCampus: string;
   }) {
-    if (input.karmaStaked < 10) throw new Error('Minimum karma stake is 10');
-    if (input.requesterUid === input.providerUid) throw new Error('Cannot swap with yourself');
+    if (!Number.isFinite(input.karmaStaked) || input.karmaStaked < 10) {
+      throw new Error('Invalid karma amount. Minimum karma stake is 10');
+    }
 
     const balance = await KarmaService.getBalance(input.requesterUid);
     if (balance < input.karmaStaked) throw new Error('Insufficient karma for this stake');
@@ -107,13 +108,26 @@ export class SwapService {
    * Refunds escrow back to requester.
    */
   static async rejectSwap(swapId: string, providerUid: string) {
-    const swap = await SwapModel.findById(swapId);
-    if (!swap) throw new Error('Swap not found');
-    if (swap.providerUid !== providerUid) throw new Error('Unauthorized');
-    if (swap.status !== 'pending') throw new Error('Only pending swaps can be rejected');
+    const updatedSwap = await SwapModel.findOneAndUpdate(
+      {
+        _id: swapId,
+        providerUid,
+        status: 'pending'
+      },
+      {
+        $set: {
+          status: 'canceled',
+          rejectedAt: new Date()
+        }
+      },
+      { new: true }
+    );
 
-    swap.status = 'canceled';
-    await swap.save();
+    if (!updatedSwap) {
+      throw new Error('Swap not in pending status or unauthorized');
+    }
+
+    const swap = updatedSwap;
 
     // Refund Escrow
     await KarmaService.recordTransaction({

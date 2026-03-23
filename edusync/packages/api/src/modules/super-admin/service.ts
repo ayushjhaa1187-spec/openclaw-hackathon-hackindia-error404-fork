@@ -1,22 +1,17 @@
-// @ts-ignore
-import { CollegeGroupModel } from '@edusync/db/dist/mongo/models/college-group.js';
+import { CollegeGroupModel, StudentModel, CampusSettingsModel } from '@edusync/db';
 import { AnalyticsService } from '../analytics/service.js';
-// @ts-ignore
-import { StudentProfileModel } from '@edusync/db/dist/mongo/models/core.js';
-// @ts-ignore
-import { CampusSettingsModel } from '@edusync/db/dist/mongo/models/campus-settings.js';
 
 export class SuperAdminService {
   static async getDashboardOverview() {
     // 1. Global Metrics
-    const totalStudents = await StudentProfileModel.countDocuments();
+    const totalStudents = await StudentModel.countDocuments();
     // In a real app, this would be more complex and aggregated from snapshots
     // For MVP, we derive from existing collections
     const campusDocs = await CampusSettingsModel.find({}, 'campusId name enabled status');
     
     // 2. Format Campuses for Super Admin
     const campuses = await Promise.all(campusDocs.map(async (c: any) => {
-      const studentCount = await StudentProfileModel.countDocuments({ campusId: c.campusId });
+      const studentCount = await StudentModel.countDocuments({ campusId: c.campusId });
       return {
         id: c.campusId,
         name: c.name,

@@ -1,4 +1,4 @@
-import { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, model } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
 const CollegeGroupSchema = new Schema({
@@ -37,4 +37,4 @@ const CollegeGroupSchema = new Schema({
 });
 
 // Ensure we don't overwrite if model already exists
-export const CollegeGroupModel = models.CollegeGroup || model('CollegeGroup', CollegeGroupSchema);
+export const CollegeGroupModel = mongoose.models.CollegeGroup || model('CollegeGroup', CollegeGroupSchema);

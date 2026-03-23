@@ -1,4 +1,4 @@
-import { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, model } from 'mongoose';
 
 const ErrorReportSchema = new Schema({
   errorMessage: { type: String, required: true },
@@ -19,4 +19,4 @@ const ErrorReportSchema = new Schema({
   timestamps: true
 });
 
-export const ErrorReportModel = models.ErrorReport || model('ErrorReport', ErrorReportSchema);
+export const ErrorReportModel = mongoose.models.ErrorReport || model('ErrorReport', ErrorReportSchema);

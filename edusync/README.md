@@ -2,6 +2,9 @@
 
 ![EduSync Banner](https://images.unsplash.com/photo-1523050335382-c5150a501c47?q=80&w=2070&auto=format&fit=crop)
 
+### 🔴 LIVE LINK: [edusync-nexus.vercel.app](https://edusync-nexus.vercel.app)
+### 🤖 ASEE STATUS: **FULLY AUTONOMOUS (PHASE 5-20)**
+
 > **"Turning paper MOUs into living, measurable ecosystems."**
 
 EduSync is a production-grade, multi-campus skill-sharing and knowledge marketplace designed to revolutionize student collaboration across institutional boundaries. Built for the modern university group, it bridges the gap between fragmented campus silos.
@@ -71,7 +74,7 @@ edusync/
 ### Quick Start
 ```bash
 # Clone the repository
-git clone https://github.com/HackIndiaXYZ/edusync-nexus.git
+git clone https://github.com/HackIndiaXYZ/openclaw-hackathon-hackindia-error404.git
 
 # Install dependencies
 pnpm install
