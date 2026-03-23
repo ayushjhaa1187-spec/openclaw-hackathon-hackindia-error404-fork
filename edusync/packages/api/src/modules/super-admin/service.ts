@@ -1,7 +1,10 @@
-import { CollegeGroupModel } from '../../../packages/db/mongo/models/college-group.js';
+// @ts-ignore
+import { CollegeGroupModel } from '@edusync/db/dist/mongo/models/college-group.js';
 import { AnalyticsService } from '../analytics/service.js';
-import { StudentProfileModel } from '../../../packages/db/mongo/models/core.js';
-import { CampusSettingsModel } from '../../../packages/db/mongo/models/campus-settings.js';
+// @ts-ignore
+import { StudentProfileModel } from '@edusync/db/dist/mongo/models/core.js';
+// @ts-ignore
+import { CampusSettingsModel } from '@edusync/db/dist/mongo/models/campus-settings.js';
 
 export class SuperAdminService {
   static async getDashboardOverview() {
@@ -12,7 +15,7 @@ export class SuperAdminService {
     const campusDocs = await CampusSettingsModel.find({}, 'campusId name enabled status');
     
     // 2. Format Campuses for Super Admin
-    const campuses = await Promise.all(campusDocs.map(async (c) => {
+    const campuses = await Promise.all(campusDocs.map(async (c: any) => {
       const studentCount = await StudentProfileModel.countDocuments({ campusId: c.campusId });
       return {
         id: c.campusId,
@@ -60,7 +63,7 @@ export class SuperAdminService {
   static async getGlobalAnalytics() {
     // Aggregates across ALL groups
     const groups = await CollegeGroupModel.find({ status: 'active' });
-    const byGroup = await Promise.all(groups.map(async (g) => {
+    const byGroup = await Promise.all(groups.map(async (g: any) => {
       const metrics = await AnalyticsService.getGroupOverview(g.collegeGroupId);
       return {
         groupId: g.collegeGroupId,

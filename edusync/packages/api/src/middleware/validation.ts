@@ -18,19 +18,19 @@ export function validate(schema: ZodSchema) {
       const validated = await schema.parseAsync(data);
       
       // Replace request data with validated data
-      req.body = validated.body || req.body;
-      req.params = validated.params || req.params;
-      req.query = validated.query || req.query;
+      req.body = (validated as any).body || req.body;
+      req.params = (validated as any).params || req.params;
+      req.query = (validated as any).query || req.query;
 
       next();
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Request validation failed',
-            details: error.errors,
+            details: (error as any).errors,
           },
         });
       }

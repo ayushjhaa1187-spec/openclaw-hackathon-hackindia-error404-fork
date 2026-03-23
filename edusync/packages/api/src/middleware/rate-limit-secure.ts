@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
-import redis from '../lib/redis';
+import redis from '../lib/redis.js';
 
 /**
  * Global API rate limiter
@@ -8,7 +8,7 @@ import redis from '../lib/redis';
  */
 export const globalLimiter = rateLimit({
   store: new RedisStore({
-    client: redis,
+    sendCommand: (...args: string[]) => redis.sendCommand(args),
     prefix: 'rl:global:',
   }),
   windowMs: 60 * 1000, // 1 minute
@@ -17,7 +17,7 @@ export const globalLimiter = rateLimit({
   statusCode: 429,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
+  skip: (req: any) => {
     // Skip rate limiting for health checks
     return req.path === '/api/v1/health';
   },
@@ -29,7 +29,7 @@ export const globalLimiter = rateLimit({
  */
 export const authLimiter = rateLimit({
   store: new RedisStore({
-    client: redis,
+    sendCommand: (...args: string[]) => redis.sendCommand(args),
     prefix: 'rl:auth:',
   }),
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -46,12 +46,12 @@ export const authLimiter = rateLimit({
  */
 export const userLimiter = rateLimit({
   store: new RedisStore({
-    client: redis,
+    sendCommand: (...args: string[]) => redis.sendCommand(args),
     prefix: 'rl:user:',
   }),
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 1000,
-  keyGenerator: (req) => {
+  keyGenerator: (req: any) => {
     // Use user ID if authenticated, fall back to IP
     return (req as any).user?.sub || req.ip || 'anonymous';
   },
@@ -66,12 +66,12 @@ export const userLimiter = rateLimit({
  */
 export const heavyOpLimiter = rateLimit({
   store: new RedisStore({
-    client: redis,
+    sendCommand: (...args: string[]) => redis.sendCommand(args),
     prefix: 'rl:heavy:',
   }),
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10,
-  keyGenerator: (req) => {
+  keyGenerator: (req: any) => {
     return (req as any).user?.sub || req.ip || 'anonymous';
   },
   message: { error: { code: 'HEAVY_OP_LIMITED', message: 'Too many heavy operations' } },
@@ -84,7 +84,7 @@ export const heavyOpLimiter = rateLimit({
  */
 export const ddosProtection = rateLimit({
   store: new RedisStore({
-    client: redis,
+    sendCommand: (...args: string[]) => redis.sendCommand(args),
     prefix: 'rl:ddos:',
   }),
   windowMs: 60 * 1000, // 1 minute
@@ -93,5 +93,5 @@ export const ddosProtection = rateLimit({
   statusCode: 503,
   standardHeaders: true,
   // Skip on success to only trigger on errors
-  skip: (req, res) => res.statusCode < 400,
+  skip: (req: any, res: any) => res.statusCode < 400,
 });

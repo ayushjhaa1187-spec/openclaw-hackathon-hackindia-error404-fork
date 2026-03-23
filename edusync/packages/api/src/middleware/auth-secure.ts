@@ -1,22 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
-import JWTService from '../lib/jwt.service';
+import JWTService from '../lib/jwt.service.js';
 
 /**
  * Secure authentication middleware
  * Validates JWT and checks for revocation
  */
-export function secureAuth(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
+  export async function secureAuth(req: Request, res: Response, next: NextFunction) {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: { code: 'NO_TOKEN', message: 'Missing authorization token' },
+      });
+    }
   
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      error: { code: 'NO_TOKEN', message: 'Missing authorization token' },
-    });
-  }
-
-  const token = authHeader.slice(7);
-  const payload = JWTService.verifyAccessToken(token);
+    const token = authHeader.slice(7);
+    const payload = await JWTService.verifyAccessToken(token);
 
   if (!payload) {
     return res.status(401).json({

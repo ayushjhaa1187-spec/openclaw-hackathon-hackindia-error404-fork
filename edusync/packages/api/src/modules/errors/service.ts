@@ -1,4 +1,5 @@
-import { ErrorReportModel } from '../../../../packages/db/mongo/models/error-report.js';
+// @ts-ignore
+import { ErrorReportModel } from '@edusync/db/dist/mongo/models/error-report.js';
 
 export class ErrorReportService {
   static async storeErrorReport(data: any) {

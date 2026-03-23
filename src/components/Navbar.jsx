@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutDashboard, Search, BookOpen, MessageSquare, Shield, Globe, Building2 } from 'lucide-react'
+import { LayoutDashboard, Search, BookOpen, MessageSquare, Shield, Globe, Building2, Bell } from 'lucide-react'
 
 const Navbar = ({ activeTab, setActiveTab, currentCampus }) => {
   const tabs = [

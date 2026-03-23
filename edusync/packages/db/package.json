@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/src/nexus-connector.d.ts",
       "import": "./dist/src/nexus-connector.js"
+    },
+    "./dist/mongo/models/*": {
+      "types": "./dist/mongo/models/*.d.ts",
+      "import": "./dist/mongo/models/*.js"
     }
   },
   "dependencies": {

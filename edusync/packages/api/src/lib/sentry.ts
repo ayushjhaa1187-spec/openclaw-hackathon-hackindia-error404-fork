@@ -19,7 +19,7 @@ export function initSentry(app: any) {
       new Sentry.Integrations.OnUncaughtException(),
       new Sentry.Integrations.OnUnhandledRejection(),
     ],
-    beforeSend(event) {
+    beforeSend(event: any) {
       // Filter out health check noise
       if (event.request?.url?.includes('/api/v1/health')) {
         return null;
@@ -48,7 +48,7 @@ export function initSentry(app: any) {
 /**
  * Sentry error handler middleware (must be AFTER all routes)
  */
-export function sentryErrorHandler() {
+export function sentryErrorHandler(): any {
   return Sentry.Handlers.errorHandler({
     shouldHandleError(error: any) {
       // Report all 4xx and 5xx errors

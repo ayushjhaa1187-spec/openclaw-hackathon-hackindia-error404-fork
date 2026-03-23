@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import redis from './redis';
+import redis from './redis.js';
 
 interface JWTPayload {
   sub: string; // subject (user ID)
@@ -66,7 +66,7 @@ export class JWTService {
     );
 
     // Store token metadata in Redis with TTL
-    redis.setex(
+    redis.setEx(
       `refresh_token:${userId}:${tokenId}`,
       this.REFRESH_TOKEN_EXPIRY,
       JSON.stringify({
@@ -82,13 +82,13 @@ export class JWTService {
   /**
    * Verify and decode access token
    */
-  static verifyAccessToken(token: string): JWTPayload | null {
+  static async verifyAccessToken(token: string): Promise<JWTPayload | null> {
     try {
       // Check if token is revoked
       const decoded = jwt.decode(token) as any;
       if (!decoded) return null;
 
-      const isRevoked = redis.get(`revoked_token:${token}`);
+      const isRevoked = await redis.get(`revoked_token:${token}`);
       if (isRevoked) {
         throw new Error('Token has been revoked');
       }
@@ -126,7 +126,7 @@ export class JWTService {
       const { sub: userId, tokenId } = decoded;
 
       // Check if this refresh token was revoked or already rotated
-      const tokenMetadata = redis.get(`refresh_token:${userId}:${tokenId}`);
+      const tokenMetadata = await redis.get(`refresh_token:${userId}:${tokenId}`);
       if (!tokenMetadata) {
         throw new Error('Refresh token not found (may have expired)');
       }
@@ -144,7 +144,7 @@ export class JWTService {
       }
 
       // Mark old refresh token as rotated
-      redis.setex(
+      redis.setEx(
         `refresh_token:${userId}:${tokenId}`,
         this.ROTATION_INTERVAL,
         JSON.stringify({
@@ -184,28 +184,30 @@ export class JWTService {
     // Calculate remaining TTL
     const remainingTtl = decoded.exp - Math.floor(Date.now() / 1000);
     if (remainingTtl > 0) {
-      redis.setex(`revoked_token:${token}`, remainingTtl, 'true');
+      redis.setEx(`revoked_token:${token}`, remainingTtl, 'true');
     }
   }
 
   /**
    * Revoke all tokens for a user (for security incidents)
    */
-  static revokeAllUserTokens(userId: string) {
+  static async revokeAllUserTokens(userId: string) {
     // Find all refresh tokens for this user
-    redis.keys(`refresh_token:${userId}:*`, (err, keys) => {
-      if (err || !keys) return;
+    try {
+      const keys = await redis.keys(`refresh_token:${userId}:*`);
+      if (!keys || keys.length === 0) return;
 
-      keys.forEach(key => {
-        redis.setex(key, 3600, JSON.stringify({
+      keys.forEach((key: any) => {
+        redis.setEx(key, 3600, JSON.stringify({
           isRevoked: true,
           revokedAt: Date.now(),
         }));
       });
-    });
-
-    // Mark user as "needs re-login"
-    redis.setex(`user_logout_all:${userId}`, 3600, 'true');
+      // Mark user as "needs re-login"
+      redis.setEx(`user_logout_all:${userId}`, 3600, 'true');
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   /**
