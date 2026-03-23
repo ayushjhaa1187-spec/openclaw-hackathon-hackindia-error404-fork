@@ -42,8 +42,16 @@ export class ScoringService {
     hit: any,
     requester: any
   ): number {
+    // Phase 9 Security: Handle unauthenticated/public search
+    if (!requester) {
+      // For public discovery, just return reputation + relevance
+      const relevance = Math.min(Math.max(hit._rankingScore || 0.5, 0), 1.0);
+      const reputation = this.getReputationScore(hit.karma || 0, hit.rankTier || 'bronze');
+      return relevance * SCORING_WEIGHTS.RELEVANCE + reputation * SCORING_WEIGHTS.REPUTATION;
+    }
+
     // Invariant: can't score self
-    if (hit.firebaseUid === requester.uid || hit.firebaseUid === requester.firebaseUid) return 0;
+    if (hit.firebaseUid === requester.uid || hit.firebaseUid === (requester.firebaseUid || requester.uid)) return 0;
 
     // Invariant: exclude banned students
     const bannedStatuses = ['suspended', 'banned'];
@@ -99,9 +107,14 @@ export class ScoringService {
   } {
     const relevance = Math.min(Math.max(hit._rankingScore || 0.5, 0), 1.0);
     const reputation = this.getReputationScore(hit.karma || 0, hit.rankTier || 'bronze');
+    
+    // Phase 9 Security: Default proximity for unauthenticated users
+    const requesterCampus = requester?.campusId || '';
+    const partnerCampuses = requester?.partnerCampuses || [];
+
     const proximity = this.getProximityScore(
-      requester.campusId,
-      requester.partnerCampuses || [],
+      requesterCampus,
+      partnerCampuses,
       hit.campusId
     );
 
@@ -111,8 +124,8 @@ export class ScoringService {
       proximity,
       tierLabel: this.getTierLabel(hit.rankTier || 'bronze'),
       proximityLabel: this.getProximityLabel(
-        requester.campusId,
-        requester.partnerCampuses || [],
+        requesterCampus,
+        partnerCampuses,
         hit.campusId
       ),
     };

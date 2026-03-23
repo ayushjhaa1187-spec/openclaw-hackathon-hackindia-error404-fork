@@ -35,11 +35,17 @@ export async function initializeMeilisearch() {
 export async function configureMeilisearchIndexes() {
   try {
     // 1. Lazy configuration check
-    const currentSettings = await studentsIndex.getSettings();
-    const isConfigured = 
-      currentSettings.searchableAttributes?.includes('skills') &&
-      currentSettings.filterableAttributes?.includes('campus') &&
-      currentSettings.typoTolerance?.enabled === true;
+    let isConfigured = false;
+    try {
+      const currentSettings = await studentsIndex.getSettings();
+      isConfigured = !!(
+        currentSettings.searchableAttributes?.includes('skills') &&
+        currentSettings.filterableAttributes?.includes('campus') &&
+        currentSettings.typoTolerance?.enabled === true
+      );
+    } catch (e) {
+      console.log('Index not found, proceeding with creation...');
+    }
 
     if (isConfigured) {
       console.log('✅ Meilisearch indexes already configured');
