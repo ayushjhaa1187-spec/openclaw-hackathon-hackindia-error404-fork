@@ -12,7 +12,8 @@
   "devDependencies": {
     "turbo": "latest",
     "prettier": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "tsx": "latest"
   },
   "packageManager": "npm@10.2.3",
   "workspaces": [

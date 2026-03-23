@@ -1,5 +1,31 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite"
+  "version": 2,
+  "builds": [
+    {
+      "src": "edusync/apps/web/package.json",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "edusync/apps/admin/package.json",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "edusync/packages/api/package.json",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/v1/(.*)",
+      "dest": "edusync/packages/api/dist/server.js"
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "edusync/apps/admin/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "edusync/apps/web/$1"
+    }
+  ]
 }
