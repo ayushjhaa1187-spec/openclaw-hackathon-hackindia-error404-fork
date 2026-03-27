@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, SlidersHorizontal, Globe, X, Zap, ArrowRight, Star } from 'lucide-react'
+import { toast } from 'sonner'
 import { MOCK_SKILLS, MOCK_CAMPUSES } from '../data/mockData'
 import SkillCard from '../components/shared/SkillCard'
 import SwapRequestModal from '../components/shared/SwapRequestModal'
@@ -20,7 +21,6 @@ export default function Explore() {
       const matchesSearch = skill.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            skill.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
       const matchesCategory = activeCategory === 'All' || skill.category === activeCategory
-      const matchesNexus = isNexusMode ? true : !skill.is_nexus // If nexus mode off, only show local/verified (mock data doesn't have local vs nexus campus logic, so we'll just toggle the tag)
       
       return matchesSearch && matchesCategory && (isNexusMode ? true : !skill.is_nexus)
     })
@@ -141,7 +141,7 @@ export default function Explore() {
 
       {/* Skills Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-        {filteredSkills.map((skill, idx) => (
+        {filteredSkills.map((skill) => (
           <SkillCard 
             key={skill.id} 
             skill={skill} 

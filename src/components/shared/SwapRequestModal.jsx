@@ -10,13 +10,13 @@ import { useAuthStore } from '../../stores/authStore'
 
 export default function SwapRequestModal({ skill, onClose }) {
   const [step, setStep] = useState(1)
-  const { profile, updateProfile } = useAuthStore()
-  const { register, handleSubmit, watch, formState: { errors } } = useForm()
+  const { profile } = useAuthStore()
+  const { register, handleSubmit, formState: { errors } } = useForm()
 
   const nextStep = () => setStep(s => s + 1)
   const prevStep = () => setStep(s => s - 1)
 
-  const onSubmit = async (data) => {
+  const onSubmit = async () => {
     // Check karma
     if (profile.karma_balance < skill.karma_cost) {
       toast.error('Not enough Karma for this swap.')

@@ -2,7 +2,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { Star, Zap, Globe, AlertTriangle, ArrowRight } from 'lucide-react'
 import Avatar from '../ui/Avatar'
-import Button from '../components/ui/Button'
+import Button from '../ui/Button'
 
 export default function SkillCard({ 
   skill, 
