@@ -1,43 +1,62 @@
+import React from 'react'
 import { motion } from 'framer-motion'
-import Spinner from './Spinner'
+import { Loader2 } from 'lucide-react'
 
-export default function Button({ 
-  children, 
-  variant = 'primary', 
-  size = 'md', 
-  className = '', 
-  loading = false, 
+export default function Button({
+  children,
+  onClick,
+  type = 'button',
+  variant = 'primary',
+  size = 'md',
+  isLoading = false,
   disabled = false,
-  ...props 
+  fullWidth = false,
+  icon: Icon,
+  className = '',
+  ...props
 }) {
-  const variants = {
-    primary: 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-200',
-    secondary: 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-md shadow-emerald-200',
-    outline: 'bg-transparent border-2 border-slate-200 text-slate-700 hover:border-indigo-600 hover:text-indigo-600',
-    ghost: 'bg-transparent text-slate-600 hover:bg-slate-100',
-    danger: 'bg-rose-600 text-white hover:bg-rose-500 shadow-md shadow-rose-200',
-    white: 'bg-white text-indigo-600 hover:bg-slate-50 shadow-lg'
+  const baseClasses = 'flex items-center justify-center gap-2 rounded-xl font-bold transition-all focus:outline-none'
+  
+  const variantClasses = {
+    primary: 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 active:scale-95',
+    secondary: 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10 active:scale-95',
+    ghost: 'bg-transparent text-slate-600 hover:bg-slate-50 active:scale-95',
+    outline: 'bg-transparent border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 active:scale-95',
+    danger: 'bg-rose-500 text-white hover:bg-rose-600 shadow-lg shadow-rose-500/20 active:scale-95',
   }
 
-  const sizes = {
-    sm: 'px-4 py-2 text-sm rounded-lg',
-    md: 'px-6 py-3 text-base rounded-xl font-semibold',
-    lg: 'px-8 py-4 text-lg rounded-2xl font-bold'
+  const sizeClasses = {
+    xs: 'px-3 py-1.5 text-xs',
+    sm: 'px-6 py-2.5 text-sm',
+    md: 'px-8 py-4 text-base',
+    lg: 'px-10 py-5 text-lg',
   }
+
+  const widthClass = fullWidth ? 'w-full' : ''
 
   return (
     <motion.button
-      whileTap={{ scale: 0.95 }}
-      disabled={disabled || loading}
+      type={type}
+      onClick={onClick}
+      disabled={disabled || isLoading}
       className={`
-        relative overflow-hidden transition-colors flex items-center justify-center gap-2
-        disabled:opacity-50 disabled:cursor-not-allowed
-        ${variants[variant]} ${sizes[size]} ${className}
+        ${baseClasses} 
+        ${variantClasses[variant]} 
+        ${sizeClasses[size]} 
+        ${widthClass} 
+        ${disabled ? 'opacity-50 cursor-not-allowed grayscale' : ''} 
+        ${className}
       `}
       {...props}
     >
-      {loading && <Spinner size="sm" />}
-      <span className={loading ? 'opacity-0' : 'opacity-100'}>{children}</span>
+      {isLoading ? (
+        <Loader2 className="animate-spin w-5 h-5" />
+      ) : (
+        <>
+          {Icon && <Icon size={size === 'xs' ? 14 : 20} />}
+          {children}
+        </>
+      )}
     </motion.button>
   )
 }

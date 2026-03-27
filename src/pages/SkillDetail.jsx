@@ -1,226 +1,247 @@
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
-import { supabase } from '../lib/supabase'
-import { ArrowLeft, Star, Zap, Globe, MapPin, Calendar, AlertTriangle, ShieldCheck } from 'lucide-react'
-import { useState, useMemo } from 'react'
-import { useAuthStore } from '../stores/authStore'
+import React, { useMemo, useState } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  Zap, Star, Clock, Globe, ShieldCheck, 
+  CheckCircle2, MessageSquare, ArrowLeft, 
+  Share2, AlertTriangle, PlayCircle, BookOpen,
+  Calendar, Layers, Users, Rocket
+} from 'lucide-react'
+import { MOCK_SKILLS } from '../data/mockData'
 import Button from '../components/ui/Button'
-import Card from '../components/ui/Card'
-import Badge from '../components/ui/Badge'
 import Avatar from '../components/ui/Avatar'
-import StarRating from '../components/shared/StarRating'
 import SwapRequestModal from '../components/shared/SwapRequestModal'
+import { toast } from 'sonner'
 
 export default function SkillDetail() {
   const { skillId } = useParams()
   const navigate = useNavigate()
-  const { profile, user } = useAuthStore()
   const [showSwapModal, setShowSwapModal] = useState(false)
-
-  const { data: skill, isLoading, error } = useQuery({
-    queryKey: ['skill-detail', skillId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('skills')
-        .select(`
-          *,
-          mentor:profiles!mentor_id(id, full_name, avatar_url, bio, department, year_of_study, karma_balance, created_at, campuses(name)),
-          campus:campuses(*)
-        `)
-        .eq('id', skillId)
-        .single()
-      
-      if (error) throw error
-      return data
-    }
-  })
-
-  const { data: reviews } = useQuery({
-    queryKey: ['skill-reviews', skillId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('skill_reviews')
-        .select('*, reviewer:profiles!reviewer_id(full_name, avatar_url)')
-        .eq('skill_id', skillId)
-      if (error) throw error
-      return data
-    },
-    enabled: !!skillId
-  })
-
-  const activeSinceDate = useMemo(() => {
-    if (!skill?.mentor?.created_at) return 'Recent'
-    return new Date(skill.mentor.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
-  }, [skill])
-
-  if (isLoading) return (
-    <div className="max-w-7xl mx-auto px-6 py-12 flex items-center justify-center min-h-[60vh]">
-       <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full" />
-    </div>
-  )
-
-  if (error || !skill) return (
-    <div className="max-w-lg mx-auto px-6 py-24 text-center">
-       <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500">
-         <AlertTriangle size={40} />
-       </div>
-       <h2 className="text-3xl font-outfit font-black text-slate-900 mb-2 uppercase">Skill Missing in Archive</h2>
-       <p className="text-slate-500 mb-8 font-medium">This skill listing might have been removed or moved to the private archive.</p>
-       <Button onClick={() => navigate('/explore')}>Back to Explore</Button>
-    </div>
-  )
-
-  const canAfford = (profile?.karma_balance || 0) >= skill.karma_cost
-  const isOwnSkill = skill.mentor_id === user?.id
+  
+  const skill = useMemo(() => MOCK_SKILLS.find(s => s.id === skillId) || MOCK_SKILLS[0], [skillId])
+  const activeSinceDate = useMemo(() => new Date(2025, 0, 15).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), [])
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 pb-32 md:pb-12 font-sans bg-slate-50 min-h-screen">
-      <div className="mb-8">
-         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 font-black uppercase text-[10px] tracking-widest transition-all">
-           <ArrowLeft size={16} /> Back to Search
-         </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr,380px] gap-12 items-start">
-        <div className="space-y-12">
-          <section>
-             <div className="mb-4 flex flex-wrap gap-2">
-                <Badge variant="indigo" className="px-4 py-2 text-xs font-black uppercase tracking-[.2em]">{skill.category}</Badge>
-                {skill.is_nexus && <Badge variant="purple" className="px-4 py-2 text-xs font-black uppercase tracking-[.2em] shadow-xl shadow-purple-50"><Globe size={12} className="mr-2" /> Nexus Cross-Campus</Badge>}
-             </div>
-             <h1 className="text-5xl md:text-6xl font-outfit font-black text-slate-900 mb-6 tracking-tighter uppercase leading-[0.9]">{skill.title}</h1>
-             <div className="flex flex-wrap gap-4 items-center">
-                <StarRating rating={skill.avg_rating} count={skill.total_reviews} />
-                <div className="w-1 h-1 bg-slate-200 rounded-full hidden sm:block" />
-                <Badge variant="slate" className="font-bold text-slate-400 border-none px-0"><MapPin size={12} className="mr-1" /> {skill.campus?.name}</Badge>
-             </div>
-          </section>
-
-          <section className="bg-white p-10 rounded-[40px] shadow-xl shadow-slate-200/40 border border-slate-100">
-             <h3 className="text-xs font-black uppercase tracking-widest text-indigo-600 mb-6 inline-block pb-2 border-b-2 border-indigo-100">Description</h3>
-             <p className="text-xl text-slate-600 leading-relaxed font-outfit font-medium">
-               {skill.description || 'No detailed description provided by the mentor. Send a swap request to ask specific questions about the curriculum.'}
-             </p>
-             <div className="flex flex-wrap gap-2 mt-10">
-               {skill.tags?.map((tag, i) => (
-                 <span key={i} className="px-5 py-2.5 bg-slate-50 border border-slate-100 text-slate-500 rounded-2xl font-bold text-sm hover:border-indigo-200 transition-colors">#{tag}</span>
-               ))}
-             </div>
-          </section>
-
-          <section>
-             <div className="flex justify-between items-center mb-8">
-                <h3 className="text-2xl font-outfit font-black text-slate-900 tracking-tight uppercase">Peer Reviews</h3>
-                {skill.total_reviews > 0 && <span className="text-sm font-bold text-slate-400">Showing {reviews?.length || 0} reviews</span>}
-             </div>
-             
-             {reviews?.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   {reviews.map((rev, i) => (
-                      <Card key={i} className="p-6 bg-white flex flex-col items-start text-left shadow-lg scale-95 hover:scale-100 transition-transform">
-                         <div className="flex items-center gap-3 mb-4">
-                            <Avatar size="sm" src={rev.reviewer?.avatar_url} name={rev.reviewer?.full_name} seed={rev.reviewer?.full_name} />
-                            <div>
-                               <p className="text-xs font-black text-slate-900 leading-none mb-1">{rev.reviewer?.full_name}</p>
-                               <StarRating rating={rev.rating} />
-                            </div>
-                         </div>
-                         <p className="text-slate-500 text-sm font-medium italic leading-relaxed">"{rev.comment}"</p>
-                         <span className="mt-4 text-[10px] font-black uppercase text-slate-300 tracking-widest">{new Date(rev.created_at).toLocaleDateString()}</span>
-                      </Card>
-                   ))}
-                </div>
-             ) : (
-                <div className="bg-slate-100/50 border-2 border-dashed border-slate-200 py-16 rounded-[40px] text-center">
-                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-                      <Star size={30} />
-                   </div>
-                   <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No reviews listed in the archive yet.</p>
-                </div>
-             )}
-          </section>
-        </div>
-
-        <div className="sticky top-24 space-y-8">
-           <Card className="p-10 border-none shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2 group-hover:bg-indigo-100 transition-colors" />
-              <div className="relative z-10 text-center">
-                 <div className="mb-6 flex justify-center flex-col items-center gap-2">
-                    <p className="text-[10px] font-black uppercase tracking-[.2em] text-slate-400 leading-none">Swap Cost</p>
-                    <div className="flex items-center gap-3">
-                       <Zap size={30} className="text-amber-500 fill-current animate-pulse shadow-sm shadow-amber-100" />
-                       <span className="text-6xl font-outfit font-black text-slate-900 tracking-tighter">{skill.karma_cost}</span>
-                    </div>
-                 </div>
-
-                 <div className="bg-slate-50 p-6 rounded-3xl mb-8 border border-slate-100">
-                    <div className="flex justify-between items-center mb-1">
-                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Your Balance</span>
-                       <span className={`text-xs font-black ${canAfford ? 'text-emerald-500' : 'text-rose-500'}`}>{profile?.karma_balance} Karma</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                       <div style={{ width: `${Math.min(100, ((profile?.karma_balance || 0) / (skill.karma_cost || 1)) * 100)}%` }} className={`h-full ${canAfford ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                    </div>
-                 </div>
-
-                 {isOwnSkill ? (
-                    <div className="space-y-3">
-                       <Button variant="outline" className="w-full h-14 rounded-2xl">Edit Listing</Button>
-                       <Button variant="danger" className="w-full h-14 rounded-2xl bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-600 hover:text-white border-0">Deactivate</Button>
-                    </div>
-                 ) : (
-                    <Button 
-                      onClick={() => setShowSwapModal(true)}
-                      disabled={!canAfford}
-                      size="lg" 
-                      className="w-full h-16 rounded-2xl text-xl font-black uppercase tracking-tight shadow-lg shadow-indigo-600/30"
-                    >
-                      {canAfford ? 'Request Swap' : 'Insufficient Karma'}
-                    </Button>
-                 )}
-                 
-                 <p className="mt-8 text-xs text-slate-400 font-medium">Karma is credited only after the session is marked as complete by both parties.</p>
-              </div>
-           </Card>
-
-           <Card className="p-8 border-none shadow-xl bg-slate-900 text-white relative">
-              <Link to={`/profile/${skill.mentor_id}`} className="flex items-center gap-5 group">
-                <Avatar size="lg" src={skill.mentor?.avatar_url} name={skill.mentor?.full_name} className="border-indigo-500/30" />
-                <div className="flex-1 min-w-0">
-                   <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1 leading-none">The Mentor</p>
-                   <h4 className="text-xl font-outfit font-black group-hover:text-indigo-400 transition-colors truncate tracking-tight uppercase leading-none">{skill.mentor?.full_name}</h4>
-                   <p className="text-xs text-slate-500 font-medium truncate mt-1">
-                      {skill.mentor?.department}, Year {skill.mentor?.year_of_study}
-                   </p>
-                </div>
-              </Link>
-              <div className="mt-8 pt-6 border-t border-white/5 space-y-4">
-                 <div className="flex items-center gap-3 text-slate-400 text-sm font-medium">
-                    <ShieldCheck size={18} className="text-emerald-500" />
-                    <span>Verified Academic Account</span>
-                 </div>
-                 <div className="flex items-center gap-3 text-slate-400 text-sm font-medium">
-                    <Calendar size={18} className="text-indigo-500" />
-                    <span>Active since {activeSinceDate}</span>
-                 </div>
-              </div>
-              <Button onClick={() => navigate(`/chat`)} variant="ghost" className="w-full mt-8 bg-white/5 text-white hover:bg-white/10 uppercase font-black text-xs tracking-widest h-14">
-                 Message {skill.mentor?.full_name?.split(' ')[0]}
-              </Button>
-           </Card>
-
-           <button className="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-rose-500 text-[10px] font-black uppercase tracking-[0.2em] transition-colors py-4">
-              <AlertTriangle size={14} /> Report Listing 
-           </button>
+    <div className="bg-slate-50 min-h-screen">
+      {/* Top Navbar Context */}
+      <div className="bg-white border-b border-slate-100 px-6 py-4 sticky top-16 z-30">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-bold transition-all group">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
+              <ArrowLeft size={18} />
+            </div>
+            Back to Explore
+          </button>
+          <div className="flex items-center gap-3">
+            <button className="p-2.5 text-slate-400 hover:text-indigo-600 rounded-xl transition-all" title="Share Skill">
+              <Share2 size={20} />
+            </button>
+            <button className="p-2.5 text-slate-400 hover:text-rose-500 rounded-xl transition-all" title="Report">
+              <AlertTriangle size={20} />
+            </button>
+          </div>
         </div>
       </div>
 
-      <SwapRequestModal 
-        isOpen={showSwapModal} 
-        onClose={() => setShowSwapModal(false)} 
-        skill={skill} 
-      />
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Main Content (2/3) */}
+          <div className="lg:col-span-2 space-y-12">
+            
+            {/* Hero Section */}
+            <div className="bg-white rounded-[3rem] p-10 shadow-xl shadow-slate-100 border border-slate-100 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+              
+              <div className="flex flex-col md:flex-row items-start gap-10 relative z-10">
+                <div className="w-24 h-24 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-indigo-200">
+                  <PlayCircle size={48} strokeWidth={1.5} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none">{skill.category}</span>
+                    <span className="text-[10px] text-slate-300 font-black uppercase tracking-[0.2em]">• Nexus Verified</span>
+                  </div>
+                  <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 font-outfit tracking-tighter leading-tight">
+                    {skill.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-6">
+                    <div className="flex items-center gap-2">
+                      <Star className="text-amber-500 fill-amber-500" size={18} />
+                      <span className="text-lg font-black text-slate-900">{skill.avg_rating}</span>
+                      <span className="text-sm font-bold text-slate-400">({skill.total_reviews} Reviews)</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <Users size={18} />
+                      <span className="text-sm font-bold">14 Students Enrolled</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mentor Profile */}
+            <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl shadow-slate-100">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-black text-slate-900 font-outfit uppercase tracking-tighter">Your Peer Mentor</h2>
+                <div className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <ShieldCheck size={14} /> Active Provider
+                </div>
+              </div>
+              <div className="flex items-center gap-8 mb-10">
+                <Avatar seed={skill.mentor} size="xl" ring border />
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900 leading-tight">{skill.mentor}</h3>
+                  <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mb-2">{skill.campus}</p>
+                  <p className="flex items-center gap-1.5 text-xs text-indigo-600 font-black">
+                    <Clock size={14} /> Active since {activeSinceDate}
+                  </p>
+                </div>
+              </div>
+              <p className="text-slate-500 text-lg leading-relaxed italic max-w-2xl mb-10">
+                "I've worked on multiple inter-campus projects involving deep-tech research. {skill.title} is my primary area of expertise and I love simplifying complex concepts for fellow enthusiasts."
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-10 border-t border-slate-50">
+                {[
+                  { label: 'Swaps', value: '12', color: 'indigo' },
+                  { label: 'Response', value: '2hr', color: 'emerald' },
+                  { label: 'Accuracy', value: '98%', color: 'amber' },
+                  { label: 'Rating', value: '4.9', color: 'rose' },
+                ].map((stat, idx) => (
+                  <div key={idx} className="text-center">
+                    <div className={`text-xl font-black text-${stat.color}-600 leading-none mb-1`}>{stat.value}</div>
+                    <div className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Curriculum */}
+            <div className="space-y-8">
+              <h2 className="text-2xl font-black text-slate-900 font-outfit uppercase tracking-tighter ml-2">What you'll master</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  { title: 'Foundational Theory', icon: BookOpen, desc: 'Core academic principles and simplified conceptual workflows.' },
+                  { title: 'Real-world Projects', icon: Layers, desc: 'Implementation details from successful campus projects.' },
+                  { title: 'Nexus Practice', icon: Rocket, desc: 'Applying these skills within the EduSync ecosystem.' },
+                  { title: 'Cheat Sheets', icon: CheckCircle2, desc: 'Exclusive PDFs and notes from my personal Knowledge Vault.' },
+                ].map((item, idx) => (
+                  <div key={idx} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-md flex gap-6 group hover:border-indigo-500/30 transition-all">
+                    <div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                      <item.icon size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-slate-900 mb-1">{item.title}</h4>
+                      <p className="text-xs text-slate-500 leading-relaxed font-medium">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Reviews */}
+            <div className="bg-slate-900 rounded-[3rem] p-10 md:p-14 text-white">
+              <div className="flex items-center justify-between mb-12">
+                <h2 className="text-3xl font-black font-outfit tracking-tighter uppercase">Peer Reviews</h2>
+                <div className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400">Total: {skill.total_reviews}</div>
+              </div>
+              <div className="space-y-12">
+                {[1, 2].map(i => (
+                  <div key={i} className="flex flex-col md:flex-row gap-8">
+                    <div className="flex-shrink-0">
+                      <Avatar seed={`Reviewer-ID-${i}`} size="md" ring />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="font-black text-lg">Indravali Member</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">2 weeks ago</div>
+                        </div>
+                        <div className="flex gap-1">
+                          {[...Array(5)].map((_, j) => <Star key={j} className="fill-indigo-500 text-indigo-500" size={12} />)}
+                        </div>
+                      </div>
+                      <p className="text-slate-300 text-lg font-medium italic leading-relaxed">
+                        "The way {skill.mentor} explained the CMOS layout logic was mindblowing. Far better than any professor I've had. Worth every Karma point spent."
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar (1/3) */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-40 space-y-6">
+              
+              {/* Swap Agreement Draft Card */}
+              <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl shadow-indigo-200/50 border border-indigo-100 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600 rounded-full blur-[80px] -mr-16 -mt-16 opacity-10" />
+                
+                <h3 className="text-xs font-black uppercase text-indigo-400 tracking-[0.2em] mb-8">Draft Swap Agreement</h3>
+                
+                <div className="space-y-6 mb-10">
+                  <div className="flex justify-between items-center pb-4 border-b border-slate-50">
+                    <span className="text-sm font-bold text-slate-500">Service Fee</span>
+                    <span className="text-lg font-black text-slate-900">{skill.karma_cost} Karma</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-4 border-b border-slate-50">
+                    <span className="text-sm font-bold text-slate-500">Duration</span>
+                    <span className="text-lg font-black text-slate-900">120 Minutes</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-4 border-b border-slate-50">
+                    <span className="text-sm font-bold text-slate-500">Format</span>
+                    <span className="text-lg font-black text-slate-900 uppercase tracking-widest text-xs">Live Meet</span>
+                  </div>
+                </div>
+
+                <Button 
+                  fullWidth 
+                  size="lg" 
+                  icon={Zap} 
+                  className="mb-4 shadow-indigo-600/30"
+                  onClick={() => setShowSwapModal(true)}
+                >
+                  Confirm Request
+                </Button>
+                <div className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">
+                  100% Refundable if mentor cancels.
+                </div>
+              </div>
+
+              {/* Security Hint */}
+              <div className="bg-amber-50 rounded-3xl p-6 border border-amber-100 flex gap-4">
+                <div className="w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0">
+                  <ShieldCheck size={20} />
+                </div>
+                <p className="text-[11px] font-bold text-amber-900 leading-relaxed uppercase tracking-tight">
+                  This skill is verified by Northvale Admin. All communication is monitored to maintain institutional integrity.
+                </p>
+              </div>
+
+              {/* Chat Hint */}
+              <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-lg text-center">
+                <MessageSquare className="mx-auto mb-4 text-indigo-600" size={32} />
+                <h4 className="font-black text-slate-900 mb-2 font-outfit">Need to ask a question?</h4>
+                <p className="text-xs text-slate-500 mb-6 font-medium">Send a quick message to {skill.mentor} before you commit.</p>
+                <button 
+                  onClick={() => toast.info(`Chat with ${skill.mentor} is opening...`)}
+                  className="text-indigo-600 font-black text-xs uppercase tracking-widest hover:underline"
+                >
+                  Open Nexus Bridge →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* MODALS */}
+      <AnimatePresence>
+        {showSwapModal && (
+          <SwapRequestModal skill={skill} onClose={() => setShowSwapModal(false)} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

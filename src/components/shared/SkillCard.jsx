@@ -1,49 +1,94 @@
-import { Zap, Star } from 'lucide-react'
-import Badge from '../ui/Badge'
+import React from 'react'
+import { motion } from 'framer-motion'
+import { Star, Zap, Globe, AlertTriangle, ArrowRight } from 'lucide-react'
 import Avatar from '../ui/Avatar'
-import Card from '../ui/Card'
-import StarRating from './StarRating'
-import CampusBadge from './CampusBadge'
-import KarmaChip from './KarmaChip'
+import Button from '../components/ui/Button'
 
-export default function SkillCard({ skill, onClick, onAction }) {
-  const { title, category, mentor, campus, karma_cost, avg_rating, total_reviews, is_nexus, tags } = skill
-
+export default function SkillCard({ 
+  skill, 
+  onOpenDetail, 
+  onRequestSwap, 
+  onReport 
+}) {
   return (
-    <Card className="flex flex-col h-full group">
-       <div className="flex justify-between items-start mb-4">
-          <Badge variant={is_nexus ? 'purple' : 'indigo'} className="uppercase font-black tracking-widest text-[10px]">
-            {is_nexus && <Zap size={10} className="mr-1 fill-current" />}
-            {category}
-          </Badge>
-          <KarmaChip amount={karma_cost} />
-       </div>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      whileHover={{ y: -5 }}
+      viewport={{ once: true }}
+      className="bg-white rounded-[2rem] p-6 shadow-xl shadow-slate-100 border border-slate-100 flex flex-col h-full group transition-all hover:border-indigo-500/30 overflow-hidden relative"
+    >
+      {skill.is_nexus && (
+        <div className="absolute top-0 right-0 px-4 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-bl-2xl flex items-center gap-1.5 z-10 shadow-lg shadow-indigo-600/20">
+          <Globe size={12} />
+          Nexus Mode
+        </div>
+      )}
 
-       <div className="flex-1 cursor-pointer" onClick={onClick}>
-          <h3 className="text-xl font-outfit font-black text-slate-900 mb-2 leading-tight group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
-            {title}
-          </h3>
-          <div className="flex flex-wrap gap-1 mb-4">
-             {tags?.map(tag => <Badge key={tag} variant="slate" size="sm" className="font-bold opacity-70">#{tag}</Badge>)}
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
+        <div className="flex items-center gap-3">
+          <Avatar seed={skill.mentor} size="md" ring border />
+          <div>
+            <div className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{skill.mentor}</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{skill.campus}</div>
           </div>
-          <StarRating rating={avg_rating} count={total_reviews} />
-       </div>
+        </div>
+        <div className="flex items-center gap-1.5 bg-amber-50 text-amber-600 px-3 py-1.5 rounded-full ring-1 ring-amber-100/50">
+          <Star size={12} fill="currentColor" />
+          <span className="text-xs font-black">{skill.avg_rating}</span>
+          <span className="text-[10px] opacity-60 font-bold">({skill.total_reviews})</span>
+        </div>
+      </div>
 
-       <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-             <Avatar size="sm" name={mentor} />
-             <div className="leading-tight">
-                <p className="text-xs font-black text-slate-900 truncate max-w-[100px]">{mentor}</p>
-                <CampusBadge campus={campus} size="sm" />
-             </div>
+      {/* Content */}
+      <div className="flex-1 cursor-pointer" onClick={() => onOpenDetail(skill)}>
+        <div className="inline-flex px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-tighter mb-3">
+          {skill.category}
+        </div>
+        <h3 className="text-2xl font-black text-slate-900 mb-2 font-outfit tracking-tight leading-tight group-hover:text-indigo-600 transition-colors">
+          {skill.title}
+        </h3>
+        
+        <div className="flex flex-wrap gap-1.5 mt-4">
+          {skill.tags.map(tag => (
+            <span key={tag} className="px-2.5 py-1 bg-white border border-slate-100 text-slate-500 rounded-lg text-[10px] font-bold">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center">
+            <Zap size={20} fill="currentColor" />
           </div>
+          <div>
+            <div className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Cost</div>
+            <div className="text-lg font-black text-amber-600 leading-none">{skill.karma_cost} Karma</div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
           <button 
-            onClick={(e) => { e.stopPropagation(); onAction && onAction(skill); }}
-            className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+            onClick={() => onReport?.(skill)}
+            className="p-2.5 text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+            title="Report Content"
           >
-             <Zap size={18} />
+            <AlertTriangle size={20} />
           </button>
-       </div>
-    </Card>
+          <Button 
+            variant="primary" 
+            size="sm" 
+            className="rounded-xl px-5"
+            onClick={() => onRequestSwap(skill)}
+          >
+            Request Swap
+          </Button>
+        </div>
+      </div>
+    </motion.div>
   )
 }

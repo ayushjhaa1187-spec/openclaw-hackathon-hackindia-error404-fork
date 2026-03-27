@@ -1,447 +1,544 @@
-import { motion } from 'framer-motion'
+import React, { Suspense, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { 
-  Users, Zap, BookOpen, Star, Building2, Globe, MessageSquare, ShieldCheck, Search, ArrowRight 
+  Users, Zap, BookOpen, Building2, Star, 
+  Globe, ShieldCheck, MessageSquare, Search,
+  ArrowRight, Menu, X, CheckCircle2, AlertTriangle
 } from 'lucide-react'
-import { MOCK_TESTIMONIALS } from '../data/mockData'
-import Button from '../components/ui/Button'
-import Badge from '../components/ui/Badge'
-import Avatar from '../components/ui/Avatar'
+import { MOCK_SKILLS, MOCK_TESTIMONIALS } from '../data/mockData'
+
+// Helper component for floating chips
+const FloatingChip = ({ icon: Icon, value, label, delay }) => (
+  <motion.div
+    initial={{ y: 0 }}
+    animate={{ y: [-8, 0, -8] }}
+    transition={{ duration: 2.5 + Math.random(), repeat: Infinity, ease: "easeInOut", delay }}
+    className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-5 py-2.5 shadow-xl"
+  >
+    <Icon className="w-4 h-4 text-indigo-400" />
+    <span className="text-white font-bold">{value}</span>
+    <span className="text-white/60 text-sm">{label}</span>
+  </motion.div>
+)
 
 export default function Landing() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { staggerChildren: 0.15 }
-    }
-  }
-
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
-  }
-
+  const { scrollYProgress } = useScroll()
+  
   return (
-    <div className="overflow-x-hidden">
-      <section className="relative min-h-screen bg-navy text-white flex flex-col pt-6 overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-600 rounded-full blur-[120px] opacity-25 pointer-events-none" />
-        <div className="absolute bottom-[-5%] right-[-5%] w-80 h-80 bg-purple-600 rounded-full blur-[120px] opacity-20 pointer-events-none" />
-        
-        <nav className="relative z-10 w-full max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[#0f172a] text-slate-200 selection:bg-indigo-500/30">
+      {/* SECTION 1: HERO */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden py-24">
+        {/* Background Orbs */}
+        <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-600 rounded-full blur-[120px] opacity-25 -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-purple-600 rounded-full blur-[120px] opacity-20 translate-x-1/4 translate-y-1/4" />
+
+        {/* Top Navbar */}
+        <nav className="absolute top-0 left-0 w-full p-6 md:p-10 flex items-center justify-between z-20">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-xl shadow-lg shadow-indigo-600/20">E</div>
-            <span className="text-2xl font-black tracking-tight font-outfit">EduSync</span>
+            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <span className="text-white font-black text-xl leading-none">E</span>
+            </div>
+            <span className="text-white font-black text-2xl tracking-tighter">EduSync</span>
           </div>
-          <Link to="/login">
-            <Button variant="ghost" className="text-indigo-200 hover:text-white hover:bg-white/10">Sign In</Button>
+          <Link to="/login" className="px-6 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-semibold">
+            Sign In
           </Link>
         </nav>
 
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6"
-        >
-          <motion.div variants={fadeInUp}>
-            <Badge variant="indigo" className="bg-indigo-900/50 text-indigo-300 border-indigo-500/30 mb-8 py-2 px-4 shadow-xl">
-              🎓 Built for Indian University Students
-            </Badge>
+        {/* Hero Content */}
+        <div className="relative z-10 container mx-auto px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 bg-indigo-900/50 border border-indigo-500/30 rounded-full px-4 py-1.5 mb-8"
+          >
+            <span className="text-indigo-300 text-sm font-medium tracking-wide">🎓 Built for Indian University Students</span>
           </motion.div>
-          
-          <motion.h1 variants={fadeInUp} className="font-outfit text-5xl md:text-7xl font-black tracking-tight leading-tight max-w-4xl">
-            Your Campus Has <br /> 
+
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[1.1] tracking-tight mb-6 font-outfit"
+          >
+            Your Campus Has<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">10,000 Brilliant Minds.</span>
           </motion.h1>
 
-          <motion.p variants={fadeInUp} className="text-indigo-300 text-xl md:text-2xl mt-6 font-medium tracking-tight">
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-xl md:text-2xl text-indigo-200 mb-6 font-medium"
+          >
             You just haven't met the right one yet.
           </motion.p>
 
-          <motion.p variants={fadeInUp} className="text-slate-400 text-base md:text-lg max-w-lg mt-8 leading-relaxed font-sans">
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.45 }}
+            className="text-lg text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed"
+          >
             EduSync connects students across campuses to swap skills, share knowledge, and grow together — powered by Karma, not cash.
           </motion.p>
 
-          <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 mt-12">
-            <Link to="/login">
-              <Button size="lg" className="w-full sm:w-auto h-16 px-10">Get Started Free</Button>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20"
+          >
+            <Link to="/login" className="group w-full sm:w-auto px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-lg transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-2">
+              Get Started Free
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Button variant="outline" size="lg" className="border-white/20 text-white hover:bg-white/10 h-16 px-10" onClick={() => document.getElementById('story').scrollIntoView({ behavior: 'smooth' })}>
+            <button 
+              onClick={() => document.getElementById('how-it-works').scrollIntoView({ behavior: 'smooth' })}
+              className="w-full sm:w-auto px-10 py-5 bg-white/5 border border-white/20 hover:bg-white/10 text-white rounded-2xl font-bold text-lg transition-all"
+            >
               See How It Works
-            </Button>
+            </button>
           </motion.div>
 
-          <motion.p variants={fadeInUp} className="text-slate-500 text-sm mt-10 font-bold uppercase tracking-widest">
-            Trusted by students from Northvale, Deccan, Vistara & more
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 1 }}
+            className="text-slate-500 text-sm mb-12"
+          >
+            Trusted by students across Northvale Institute, Deccan Engineering, Vistara College & 2 more partner campuses
           </motion.p>
 
-          <div className="flex flex-wrap gap-4 mt-16 justify-center">
-            {[
-              { icon: Users, value: "2,400+", label: "Students", delay: 0 },
-              { icon: Zap, value: "840", label: "Skill Swaps", delay: 0.5 },
-              { icon: BookOpen, value: "1,200+", label: "Resources", delay: 1 }
-            ].map((stat, idx) => (
-              <motion.div
-                key={idx}
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 2.5 + idx * 0.5, repeat: Infinity, ease: "easeInOut" }}
-                className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-6 py-3 flex items-center gap-3 shadow-2xl"
-              >
-                <stat.icon size={18} className="text-indigo-400" />
-                <div className="text-left leading-none">
-                  <div className="text-lg font-black tracking-tight leading-none">{stat.value}</div>
-                  <div className="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-0.5">{stat.label}</div>
-                </div>
-              </motion.div>
-            ))}
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            <FloatingChip icon={Users} value="2,400+" label="Students" delay={0} />
+            <FloatingChip icon={Zap} value="840" label="Skill Swaps" delay={0.2} />
+            <FloatingChip icon={BookOpen} value="1,200+" label="Resources" delay={0.4} />
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      <section id="story" className="relative py-24 bg-cream overflow-hidden">
-        <div className="absolute inset-0 notebook-lines opacity-100 pointer-events-none" />
+      {/* SECTION 2: THE STORY */}
+      <section className="bg-[#fdf6ec] py-24 px-6 overflow-hidden relative">
+        {/* Notebook Lines Texture */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'repeating-linear-gradient(0deg, #000 1px, transparent 1px)', backgroundSize: '100% 28px' }} />
         
-        <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-caveat text-6xl md:text-8xl text-slate-800 leading-tight"
-          >
-            A story every engineering student <br />
-            has lived through...
-          </motion.h2>
-
-          <motion.div 
-            initial={{ scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="w-48 h-1.5 bg-indigo-500 rounded-full mx-auto mt-6" 
-          />
-
-          <motion.div 
-            initial={{ opacity: 0, x: -60 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="mt-20 flex flex-col md:flex-row gap-0 overflow-hidden bg-white rounded-3xl shadow-xl border-l-[6px] border-rose-400 text-left"
-          >
-            <div className="w-full md:w-[40%] bg-navy p-8 flex items-center justify-center min-h-[300px]">
-              <div className="relative w-48 h-48">
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-20 bg-slate-800 rounded-t-lg border-2 border-slate-700 shadow-[0_0_30px_rgba(251,191,36,0.3)] shadow-inner">
-                  <div className="absolute inset-2 bg-amber-400/20 animate-pulse rounded" />
-                </div>
-                <div className="absolute bottom-0 left-12 w-24 h-4 bg-slate-900 rounded-b-lg" />
-                <div className="absolute top-10 left-12 w-24 h-24 text-white text-9xl opacity-10 font-bold tracking-tighter pointer-events-none select-none">
-                  ?
-                </div>
-              </div>
+        <div className="container mx-auto max-w-6xl relative z-10">
+          <div className="text-center mb-20">
+            <h2 className="font-caveat text-5xl md:text-7xl text-slate-800 leading-tight">
+              A story every engineering student<br />has lived through...
+            </h2>
+            <div className="flex justify-center mt-6">
+              <motion.svg width="200" height="20" viewBox="0 0 200 20" fill="none">
+                <motion.path 
+                  d="M5 15C30 5 170 5 195 15" 
+                  stroke="#4f46e5" 
+                  strokeWidth="4" 
+                  strokeLinecap="round"
+                  initial={{ pathLength: 0 }}
+                  whileInView={{ pathLength: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1, delay: 0.5 }}
+                />
+              </motion.svg>
             </div>
-            <div className="w-full md:w-[60%] p-10 md:p-14">
-              <span className="text-rose-500 font-bold uppercase tracking-widest text-sm block mb-4">Chapter 1 — The Wall</span>
-              <div className="font-caveat text-2xl md:text-3xl text-slate-700 leading-relaxed">
-                Arjun was a 3rd-year Electronics student at <span className="text-indigo-600 font-bold">Northvale Institute of Technology</span>.<br /><br />
-                It was 2 AM on a Tuesday. His Embedded Systems exam was in 4 days. He had hit a wall — 
-                VLSI Circuit Design. The kind of topic that made you question every life choice.<br /><br />
-                He'd watched 6 YouTube videos. Read 3 chapters. Posted in 4 WhatsApp groups. Silence.<br /><br />
-                His professor replied the next morning: 'Refer to the standard textbook, Chapter 9.'<br /><br />
-                Chapter 9 was where his confusion had started.
-              </div>
-              <div className="mt-8">
-                <Badge variant="rose" className="text-sm py-1.5 px-4">😤 Frustrated. Stuck. Alone.</Badge>
-              </div>
-            </div>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            initial={{ opacity: 0, x: 60 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="mt-12 flex flex-col md:flex-row-reverse gap-0 overflow-hidden bg-white rounded-3xl shadow-xl border-r-[6px] border-amber-400 text-left"
-          >
-            <div className="w-full md:w-[40%] bg-amber-50 p-8 flex items-center justify-center min-h-[300px]">
-              <div className="relative w-48 h-48">
-                <div className="absolute inset-0 bg-amber-200/50 rounded-full blur-3xl" />
-                <div className="relative z-10 w-full h-full border-4 border-amber-500/30 rounded-2xl flex items-center justify-center p-4">
-                  <div className="grid grid-cols-2 gap-2 w-full">
-                    {[1,2,3,4].map(i => <div key={i} className="h-8 bg-amber-500/20 rounded-md" />)}
-                    <div className="col-span-2 h-16 bg-emerald-500/20 rounded-md border-2 border-emerald-500/30 flex items-center justify-center text-emerald-700 font-black">A+</div>
+          <div className="space-y-16">
+            {/* Story Block 1 */}
+            <motion.div 
+              initial={{ opacity: 0, x: -60 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col md:flex-row bg-white rounded-3xl overflow-hidden shadow-xl shadow-slate-200/50 border-l-[12px] border-red-400"
+            >
+              <div className="md:w-2/5 bg-[#0f172a] p-10 flex flex-col items-center justify-center text-center relative">
+                <div className="relative w-48 h-48">
+                  <div className="absolute inset-0 bg-amber-500/20 blur-3xl" />
+                  <div className="relative z-10 border-4 border-slate-700 rounded-xl p-4 bg-slate-900/50 backdrop-blur aspect-video w-full">
+                    <div className="w-full h-full bg-amber-500/10 rounded flex flex-col gap-2 p-3">
+                      <div className="h-2 w-3/4 bg-slate-700 rounded" />
+                      <div className="h-2 w-1/2 bg-slate-700 rounded" />
+                      <div className="mt-auto h-2 w-full bg-amber-500/40 rounded shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
+                    </div>
                   </div>
                 </div>
+                <div className="mt-8 text-white">
+                  <div className="text-4xl font-black mb-2">2:00 AM</div>
+                  <div className="text-slate-400 text-sm italic">The Night Before Exam</div>
+                </div>
               </div>
-            </div>
-            <div className="w-full md:w-[60%] p-10 md:p-14">
-              <span className="text-amber-600 font-bold uppercase tracking-widest text-sm block mb-4">Chapter 2 — The Skill Nobody Knew About</span>
-              <div className="font-caveat text-2xl md:text-3xl text-slate-700 leading-relaxed">
-                700 kilometres south, at <span className="text-indigo-600 font-bold">Deccan Engineering University</span>, Priya had just finished her VLSI lab with a perfect score.<br /><br />
-                Her professor had called her work 'exceptional.' She had a clear, simple method for CMOS layout that no textbook had ever explained properly.<br /><br />
-                She also had 4 free hours every week.<br /><br />
-                And she desperately wanted to learn React.js to build her final-year project. But the only tutors she found charged ₹800/hour. It wasn't a rate. It was a barrier.
+              <div className="md:w-3/5 p-10 md:p-14 font-caveat text-2xl text-slate-700 leading-relaxed">
+                <div className="text-sm uppercase tracking-widest text-red-500 font-bold font-sans mb-4">Chapter 1 — The Wall</div>
+                <p className="mb-6">
+                  Arjun was a 3rd-year Electronics student at <strong>Northvale Institute of Technology</strong>.
+                </p>
+                <p className="mb-6">
+                  It was 2 AM on a Tuesday. His Embedded Systems exam was in 4 days. He had hit a wall — <strong>VLSI Circuit Design</strong>. The kind of topic that made you question every life choice.
+                </p>
+                <p className="mb-8">
+                  He'd watched 6 YouTube videos. Read 3 textbook chapters. Posted in 4 WhatsApp groups. Silence.
+                </p>
+                <div className="inline-flex items-center bg-red-50 text-red-700 px-4 py-1.5 rounded-full text-lg font-sans font-medium">
+                  😤 Frustrated. Stuck. Alone.
+                </div>
               </div>
-              <div className="mt-8">
-                <Badge variant="amber" className="text-sm py-1.5 px-4">😔 Capable. Underutilized. Disconnected.</Badge>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+            </motion.div>
 
-        <div className="mt-24 pt-24 bg-slate-900/95 text-white pb-32">
-          <div className="max-w-6xl mx-auto px-6 text-center">
-            <div className="relative flex min-h-[300px] mb-12">
-              <div className="flex-1 bg-slate-800/50 rounded-l-3xl p-12 flex flex-col items-center justify-center border border-slate-700">
-                <div className="w-12 h-12 bg-indigo-500 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.5)] mb-4" />
-                <p className="text-indigo-300 font-caveat text-xl">Arjun's Desk</p>
+            {/* Story Block 2 */}
+            <motion.div 
+              initial={{ opacity: 0, x: 60 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col md:flex-row-reverse bg-white rounded-3xl overflow-hidden shadow-xl shadow-slate-200/50 border-r-[12px] border-amber-400"
+            >
+              <div className="md:w-2/5 bg-amber-50 p-10 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 blur-3xl -mr-10 -mt-10" />
+                <div className="relative z-10 w-full aspect-video bg-white rounded-xl shadow-lg border border-amber-100 p-4">
+                  <div className="space-y-3">
+                    <div className="h-2 w-3/4 bg-slate-100 rounded" />
+                    <div className="h-32 w-full bg-indigo-50 rounded-lg flex items-center justify-center">
+                      <Zap className="w-12 h-12 text-indigo-400 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-8 text-slate-800">
+                  <div className="text-4xl font-black mb-2">3:00 PM</div>
+                  <div className="text-slate-400 text-sm italic">The Golden Skill</div>
+                </div>
               </div>
-              <div className="w-1 bg-slate-700 relative">
+              <div className="md:w-3/5 p-10 md:p-14 font-caveat text-2xl text-slate-700 leading-relaxed">
+                <div className="text-sm uppercase tracking-widest text-amber-500 font-bold font-sans mb-4">Chapter 2 — The Skill Nobody Knew About</div>
+                <p className="mb-6">
+                  700 kilometres south, at <strong>Deccan Engineering University</strong>, Priya had just finished her VLSI lab with a perfect score.
+                </p>
+                <p className="mb-6">
+                  Her professor had called her work 'exceptional.' She had a clear, simple method for CMOS layout that no textbook had ever explained properly.
+                </p>
+                <p className="mb-8">
+                  She also had 4 free hours every week. She desperately wanted to learn React.js to build her final-year project. But tutors were expensive.
+                </p>
+                <div className="inline-flex items-center bg-amber-50 text-amber-700 px-4 py-1.5 rounded-full text-lg font-sans font-medium">
+                  😔 Capable. Underutilized. Disconnected.
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Gap Visualizer */}
+            <div className="relative py-20 bg-slate-900 rounded-3xl overflow-hidden text-center p-10">
+              <div className="absolute inset-0 flex">
+                <div className="w-1/2 bg-indigo-900/10" />
+                <div className="w-1/2 bg-amber-900/10" />
+              </div>
+              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-slate-700">
                 <motion.div 
-                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  animate={{ opacity: [0.6, 1, 0.6] }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="absolute inset-0 bg-indigo-500/30 blur-sm"
+                  className="h-full w-full bg-indigo-500/50 blur-[2px]"
                 />
               </div>
-              <div className="flex-1 bg-slate-800/50 rounded-r-3xl p-12 flex flex-col items-center justify-center border border-slate-700">
-                <div className="w-12 h-12 bg-amber-500 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.5)] mb-4" />
-                <p className="text-amber-300 font-caveat text-xl">Priya's Desk</p>
+
+              <div className="relative z-10">
+                <p className="font-caveat text-3xl md:text-4xl text-white max-w-2xl mx-auto leading-relaxed mb-12">
+                  "700 km. Different colleges. Same problem.<br />
+                  Neither knew the other existed.<br />
+                  Both had exactly what the other needed."
+                </p>
+                
+                <div className="flex items-center justify-center gap-4 mb-8">
+                  <div className="w-4 h-4 rounded-full bg-indigo-400 shadow-[0_0_15px_rgba(129,140,248,0.5)]" />
+                  <svg width="200" height="2" className="overflow-visible">
+                    <motion.line 
+                      x1="0" y1="1" x2="200" y2="1" 
+                      stroke="#4b5563" strokeWidth="2" strokeDasharray="6 4"
+                      initial={{ pathLength: 0 }}
+                      whileInView={{ pathLength: 0.85 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.5 }}
+                    />
+                  </svg>
+                  <div className="w-4 h-4 rounded-full bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)]" />
+                </div>
+                
+                <p className="text-slate-400 italic text-sm">
+                  This gap exists in every college network in India. Between every campus.<br />Between every semester. Students helping strangers online while the perfect mentor sat 3 hostels away.
+                </p>
               </div>
             </div>
-            
-            <motion.div 
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              className="font-caveat text-3xl md:text-5xl max-w-2xl mx-auto leading-relaxed"
-            >
-              700 km. Different colleges. Same problem. <br />
-              Neither knew the other existed. <br />
-              <span className="text-indigo-400 font-bold">Both had exactly what the other needed.</span>
-            </motion.div>
-            
-            <p className="mt-12 text-slate-500 italic max-w-lg mx-auto leading-relaxed">
-              This gap exists in every college network in India. Between every campus. Between every semester. 
-              Students helping strangers online while the perfect mentor sat 3 hostels away.
-            </p>
-          </div>
-        </div>
 
-        <div className="relative z-10 py-24 bg-white">
-          <div className="max-w-4xl mx-auto px-6 text-center">
-            <div className="relative flex items-center justify-center gap-24 mb-16">
-              <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} className="relative z-10 w-24 h-24 bg-indigo-600 rounded-3xl flex items-center justify-center font-black text-white text-5xl shadow-2xl shadow-indigo-600/30">
-                E
-                <div className="absolute inset-[-15px] border-2 border-indigo-600/30 rounded-full animate-ping pointer-events-none" />
-              </motion.div>
-            </div>
-            
+            {/* Resolution Block */}
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.97 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="font-caveat text-3xl md:text-4xl text-slate-800 leading-relaxed"
+              className="bg-white rounded-3xl p-10 md:p-16 text-center border border-indigo-100 shadow-xl"
             >
-              "Arjun opened EduSync. Searched 'VLSI Design.'<br /><br />
-              Found Priya — 3rd year, Deccan Engineering University, perfect score in lab, 4 free hours.<br /><br />
-              He sent a swap request: <span className="text-indigo-600 font-bold text-4xl italic">'I'll teach you React for 4 hours. Can you help me understand VLSI layouts?'</span><br /><br />
-              She accepted in 11 minutes."
-            </motion.div>
-
-            <div className="flex flex-wrap justify-center gap-4 mt-16 font-caveat">
-              <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-indigo-600 text-white px-6 py-3 rounded-full shadow-lg text-xl">📅 First session: 2 days later</motion.div>
-              <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg text-xl">📈 Arjun's exam: 79% (was 31%)</motion.div>
-              <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-amber-600 text-white px-6 py-3 rounded-full shadow-lg text-xl">⭐ Priya built her React project. GOT 9.1 CGPA.</motion.div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-slate-50 py-24 px-6 border-y border-slate-200">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-outfit font-black text-slate-900 tracking-tight">Getting started takes 3 minutes.</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-             <div className="hidden md:block absolute top-12 left-[20%] right-[20%] h-0.5 border-t-2 border-dashed border-indigo-200" />
-             
-             <div className="relative z-10 text-center group">
-                <div className="w-20 h-20 bg-indigo-600 rounded-3xl mx-auto flex items-center justify-center text-white mb-6 shadow-xl group-hover:scale-110 transition-transform">
-                  <Building2 size={32} />
-                  <div className="absolute top-[-10px] right-[-10px] w-10 h-10 bg-white border-4 border-slate-50 rounded-full flex items-center justify-center text-indigo-600 font-black text-xl">1</div>
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">Join your campus</h3>
-                <p className="text-slate-500 font-medium leading-relaxed">Sign up with your institutional email. We verify your campus automatically.</p>
-             </div>
-
-             <div className="relative z-10 text-center group">
-                <div className="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center text-white mb-6 shadow-xl group-hover:scale-110 transition-transform">
-                  <Zap size={32} />
-                  <div className="absolute top-[-10px] right-[-10px] w-10 h-10 bg-white border-4 border-slate-50 rounded-full flex items-center justify-center text-emerald-600 font-black text-xl">2</div>
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">List what you know</h3>
-                <p className="text-slate-500 font-medium leading-relaxed">Tell us what you can teach and what you want to learn. Takes 2 minutes.</p>
-             </div>
-
-             <div className="relative z-10 text-center group">
-                <div className="w-20 h-20 bg-amber-500 rounded-3xl mx-auto flex items-center justify-center text-white mb-6 shadow-xl group-hover:scale-110 transition-transform">
-                  <Star size={32} />
-                  <div className="absolute top-[-10px] right-[-10px] w-10 h-10 bg-white border-4 border-slate-50 rounded-full flex items-center justify-center text-amber-600 font-black text-xl">3</div>
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">Swap & grow</h3>
-                <p className="text-slate-500 font-medium leading-relaxed">Match with peers. Swap knowledge. Earn Karma you can spend across the Nexus.</p>
-             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-24 px-6 overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-outfit font-black text-slate-900 tracking-tight">Everything a student ecosystem needs.</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { icon: Globe, color: 'indigo', title: 'Nexus Mode', text: 'Discover skills beyond your own campus. Access the full inter-campus network with one switch.' },
-              { icon: Zap, color: 'amber', title: 'Karma Economy', text: 'No money changes hands. Teach to earn Karma. Spend Karma to learn. Fair, transparent, and student-powered.' },
-              { icon: BookOpen, color: 'emerald', title: 'Knowledge Vault', text: 'Verified notes, PDFs, and study guides uploaded by students. Peer-reviewed material you can trust.' },
-              { icon: ShieldCheck, color: 'slate', title: 'Admin Oversight', text: 'Every interaction moderated by campus admins. Maintaining academic integrity across the whole Nexus.' },
-              { icon: MessageSquare, color: 'purple', title: 'Real-Time Chat', text: 'Direct messaging with Nexus Bridge for cross-campus swaps. Monitored for safety and academic focus.' },
-              { icon: Search, color: 'rose', title: 'Smart Matching', text: 'AI-driven recommendations based on your unique skills, goals, and academic year.' }
-            ].map((feature, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="group p-10 rounded-3xl bg-white border border-slate-100 shadow-xl shadow-slate-200/40 hover:border-indigo-500/30 transition-all hover:bg-slate-50/50"
-              >
-                <div className={`w-14 h-14 rounded-2xl bg-${feature.color}-100 flex items-center justify-center text-${feature.color}-600 mb-8`}>
-                  <feature.icon size={28} />
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight group-hover:text-indigo-600 transition-colors uppercase text-sm tracking-widest">{feature.title}</h3>
-                <p className="text-slate-500 font-medium leading-relaxed">{feature.text}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-navy py-24 text-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-outfit font-black tracking-tight mb-4">What students are saying.</h2>
-            <p className="text-indigo-300 text-lg">Real stories from the EduSync network.</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {MOCK_TESTIMONIALS.map((t, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                className="bg-slate-800/50 p-10 rounded-3xl border border-white/5 relative overflow-hidden group hover:border-indigo-500/50 transition-all shadow-2xl"
-              >
-                <div className="absolute top-[-20px] left-[-10px] text-white/5 text-9xl font-black italic pointer-events-none select-none">“</div>
-                <div className="relative z-10 flex items-center gap-4 mb-8">
-                  <Avatar name={t.name} seed={t.avatar_seed} size="lg" />
-                  <div>
-                    <h4 className="font-bold text-lg">{t.name}</h4>
-                    <p className="text-indigo-400 text-sm font-medium">{t.campus}</p>
-                    <p className="text-slate-500 text-[10px] uppercase tracking-widest mt-0.5">{t.dept}</p>
-                  </div>
-                </div>
-                <div className="flex gap-1 mb-6">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} size={16} fill="#fbbf24" stroke="none" />
-                  ))}
-                </div>
-                <p className="font-caveat text-2xl md:text-3xl text-slate-300 italic leading-relaxed group-hover:text-white transition-colors">
-                  "{t.quote}"
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-24 px-6 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-outfit font-black text-slate-900 mb-6 tracking-tight">Our growing campus network.</h2>
-          <p className="text-slate-500 text-lg mb-16">5 partner institutions. 2,400+ students. 1 unified knowledge economy.</p>
-          
-          <div className="relative w-full max-w-lg mx-auto h-[400px] flex items-center justify-center">
-            <div className="absolute w-[300px] h-[300px] border border-slate-100 rounded-full border-dashed animate-spin-slow pointer-events-none" />
-            
-            <div className="relative z-20 w-24 h-24 bg-indigo-600 rounded-full flex items-center justify-center text-white text-5xl font-black shadow-2xl shadow-indigo-600/30">
-              E
-            </div>
-            
-            {[
-              { label: 'NIT-N', pos: 'top-0 left-1/2 -translate-x-1/2', color: 'indigo' },
-              { label: 'DEU', pos: 'top-1/4 right-0', color: 'emerald' },
-              { label: 'VCST', pos: 'bottom-1/4 right-0', color: 'amber' },
-              { label: 'ITU', pos: 'bottom-0 left-1/2 -translate-x-1/2', color: 'purple' },
-              { label: 'SIAS', pos: 'bottom-1/4 left-0', color: 'rose' }
-            ].map((campus, i) => (
-              <div key={i} className={`absolute ${campus.pos} z-10`}>
+              <div className="relative w-24 h-24 mx-auto mb-10">
                 <motion.div 
                   initial={{ scale: 0 }}
                   whileInView={{ scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className={`w-14 h-14 bg-white border-4 border border-indigo-500 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xs shadow-xl relative`}
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                  className="absolute inset-0 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-indigo-600/30 z-10"
                 >
-                  {campus.label}
-                  <div className={`absolute inset-[-8px] border-2 border border-indigo-500/20 rounded-full pulse-ring`} style={{ animationDelay: `${i * 0.5}s` }} />
+                  <span className="text-white font-black text-4xl">E</span>
                 </motion.div>
+                <div className="absolute inset-0 bg-indigo-400/20 rounded-3xl -rotate-6" />
+                <div className="absolute inset-0 bg-purple-400/20 rounded-3xl rotate-6" />
+              </div>
+
+              <div className="max-w-2xl mx-auto font-caveat text-3xl text-slate-800 leading-relaxed mb-12">
+                <p className="mb-8">"Arjun opened EduSync. Searched 'VLSI Design.'"</p>
+                <p className="mb-8">
+                  Found Priya — 3rd year, Deccan Engineering University, perfect score in Embedded Systems lab, 4 free hours per week.
+                </p>
+                <p>
+                  He sent a swap request:<br />
+                  <span className="text-indigo-600 font-bold">'I'll teach you React for 4 hours. Can you help me understand VLSI layouts?'</span><br />
+                  She accepted in 11 minutes.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-4">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-full font-caveat text-xl shadow-lg"
+                >
+                  📅 First session: 2 days later
+                </motion.div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-full font-caveat text-xl shadow-lg"
+                >
+                  📈 Arjun's score: 79% (was 31%)
+                </motion.div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-full font-caveat text-xl shadow-lg"
+                >
+                  ⭐ Priya project: 9.1 CGPA
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3: HOW IT WORKS */}
+      <section id="how-it-works" className="bg-white py-24 px-6 relative">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 font-outfit tracking-tight">Getting started takes 3 minutes.</h2>
+            <p className="text-slate-500 text-lg">Knowledge exchange refined to its simplest form.</p>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-start gap-12 md:gap-8 relative">
+            {/* Step 1 */}
+            <div className="flex-1 flex flex-col items-center text-center group">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-2xl font-black mb-6 shadow-xl shadow-indigo-600/20 group-hover:scale-110 transition-transform">1</div>
+              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Join your campus</h3>
+              <p className="text-slate-500">Sign up with your institutional email. We verify your campus automatically.</p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex-1 flex flex-col items-center text-center group">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-2xl font-black mb-6 shadow-xl shadow-emerald-600/20 group-hover:scale-110 transition-transform">2</div>
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-4">
+                <Zap className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Share your skills</h3>
+              <p className="text-slate-500">Tell us what you can teach and what you want to learn. Takes 2 minutes.</p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex-1 flex flex-col items-center text-center group">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl font-black mb-6 shadow-xl shadow-amber-500/20 group-hover:scale-110 transition-transform">3</div>
+              <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center mb-4">
+                <Star className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Swap & earn Karma</h3>
+              <p className="text-slate-500">Match with peers. Swap knowledge. Earn Karma you can spend across the Nexus.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 4: FEATURES GRID */}
+      <section className="bg-slate-50 py-24 px-6">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 font-outfit tracking-tight">Everything a student ecosystem needs.</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              { icon: Globe, color: 'indigo', title: 'Nexus Mode', desc: 'Discover skills and resources beyond your own campus. Toggle Nexus Mode to access the full inter-campus network.' },
+              { icon: Zap, color: 'amber', title: 'Karma Economy', desc: 'No money changes hands. Teach to earn Karma. Spend Karma to learn. Fair. Transparent. Trackable.' },
+              { icon: BookOpen, color: 'emerald', title: 'Knowledge Vault', desc: 'Verified notes, PDFs, and study guides uploaded by students. Admin-certified resources you can actually trust.' },
+              { icon: ShieldCheck, color: 'slate', title: 'Admin Oversight', desc: 'Every interaction is moderated. Campus admins maintain academic integrity across the entire Nexus network.' },
+              { icon: MessageSquare, color: 'purple', title: 'Real-Time Chat', desc: 'Direct messaging with Nexus Bridge for cross-campus swaps. All conversations are monitored for safety.' },
+              { icon: Search, color: 'rose', title: 'Smart Matching', desc: 'We recommend who you should meet based on your skills, learning goals, and campus network proximity.' },
+            ].map((feature, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className="bg-white/70 backdrop-blur-md border border-slate-200 rounded-3xl p-8 shadow-xl shadow-slate-100 hover:border-indigo-500/30 transition-all group"
+              >
+                <div className={`w-14 h-14 rounded-2xl bg-${feature.color}-50 text-${feature.color}-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                  <feature.icon className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 mb-3 font-outfit">{feature.title}</h3>
+                <p className="text-slate-500 leading-relaxed">{feature.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5: TESTIMONIALS */}
+      <section className="bg-slate-900 py-24 px-6 overflow-hidden">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-4 font-outfit tracking-tight">What students are saying.</h2>
+            <p className="text-slate-400 text-lg">Real stories from the EduSync network.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {MOCK_TESTIMONIALS.map((t, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className="bg-slate-800 rounded-3xl p-8 border border-slate-700 hover:border-indigo-500/50 transition-all group"
+              >
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-14 h-14 rounded-full bg-slate-700 overflow-hidden ring-2 ring-indigo-500/20">
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${t.avatar_seed}`} alt={t.name} />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold">{t.name}</div>
+                    <div className="text-indigo-400 text-sm font-medium">{t.campus}</div>
+                    <div className="text-slate-500 text-xs mt-0.5">{t.dept}</div>
+                  </div>
+                </div>
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <div className="relative">
+                  <span className="absolute -top-4 -left-2 text-6xl text-indigo-600 opacity-20 font-serif">"</span>
+                  <p className="font-caveat text-2xl text-slate-300 leading-relaxed italic relative z-10">
+                    {t.quote}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 6: CAMPUS NETWORK */}
+      <section className="bg-white py-24 px-6">
+        <div className="container mx-auto max-w-5xl text-center">
+          <h2 className="text-4xl font-black text-slate-900 mb-4 font-outfit tracking-tight">Our growing campus network.</h2>
+          <p className="text-slate-500 text-lg mb-16">5 partner institutions. 2,400+ students. 1 unified knowledge economy.</p>
+
+          <div className="relative max-w-lg mx-auto aspect-square mb-16">
+            {/* Center Node */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+              <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-indigo-600/30">
+                <span className="text-white font-black text-3xl">E</span>
+              </div>
+            </div>
+
+            {/* Orbit Paths */}
+            <div className="absolute inset-0 border border-slate-100 rounded-full" />
+            
+            {/* Campus Nodes */}
+            {[
+              { code: 'NIT-N', color: 'indigo', pos: 'top-0 left-1/2 -translate-x-1/2' },
+              { code: 'DEU', color: 'emerald', pos: 'top-1/4 right-0 translate-x-1/2' },
+              { code: 'VCST', color: 'amber', pos: 'bottom-1/4 right-0 translate-x-1/2' },
+              { code: 'ITU', color: 'purple', pos: 'bottom-0 left-1/2 -translate-x-1/2' },
+              { code: 'SIAS', color: 'rose', pos: 'top-1/2 left-0 -translate-x-1/2' },
+            ].map((node, i) => (
+              <div key={i} className={`absolute ${node.pos} flex items-center justify-center`}>
+                <div className="relative">
+                  <div className={`w-12 h-12 rounded-2xl bg-white border-2 border-${node.color}-100 flex items-center justify-center text-xs font-black text-slate-800 shadow-lg`}>
+                    {node.code}
+                  </div>
+                  <div className={`absolute inset-0 rounded-2xl ring-4 ring-${node.color}-500/20 animate-ping`} style={{ animationDelay: `${i * 0.4}s` }} />
+                </div>
+                {/* Connector SVG */}
+                <svg className="absolute top-1/2 left-1/2 -z-10 translate-x-0 translate-y-0 overflow-visible" width="1" height="1">
+                  <line x1="0" y1="0" x2={-100} y2={-100} stroke="#e2e8f0" strokeWidth="1.5" />
+                </svg>
               </div>
             ))}
           </div>
-          
-          <div className="mt-12 text-slate-600 font-medium">
-            Your college isn't on our network yet? <br />
-            <Link to="/404" className="text-indigo-600 underline font-bold hover:text-indigo-800">Apply for partnership →</Link>
+
+          <div className="text-slate-600">
+            Your college isn't on our network yet?<br />
+            <a href="#" className="text-indigo-600 font-bold underline hover:text-indigo-800 transition-colors">Apply for partnership →</a>
           </div>
         </div>
       </section>
 
-      <section className="relative py-32 px-6 bg-gradient-to-r from-indigo-600 to-purple-700 text-white text-center overflow-hidden">
-        <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-[80px] -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-[100px] translate-x-1/3 translate-y-1/3" />
-        
-        <div className="relative z-10 max-w-2xl mx-auto">
-          <h2 className="text-5xl md:text-7xl font-outfit font-black tracking-tighter mb-8 leading-tight">Ready to find your Nexus?</h2>
-          <p className="text-indigo-100 text-lg md:text-xl font-medium mb-12 opacity-80 leading-relaxed">Join free. Verify your campus email. Start swapping in minutes.</p>
-          <Link to="/login">
-            <Button variant="white" size="lg" className="h-20 px-12 text-xl rounded-full group">
-              Create Your Account
-              <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-          <p className="mt-10 text-white/60 font-medium">
-            Already a member? <Link to="/login" className="text-white underline font-bold ml-1">Sign in →</Link>
+      {/* SECTION 7: FINAL CTA */}
+      <section className="relative py-32 bg-indigo-600 flex flex-col items-center justify-center text-center overflow-hidden">
+        {/* Orbs */}
+        <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+
+        <div className="relative z-10 px-6">
+          <h2 className="text-5xl md:text-7xl font-black text-white mb-6 font-outfit tracking-tighter">Ready to find your Nexus?</h2>
+          <p className="text-indigo-100 text-lg md:text-xl max-w-xl mx-auto mb-12">
+            Join free. Verify your campus email. Start swapping in minutes.
           </p>
+          <Link to="/login" className="px-12 py-6 bg-white text-indigo-700 rounded-2xl font-black text-xl hover:bg-indigo-50 transition-all shadow-2xl shadow-black/20 active:scale-95">
+            Create Your Account
+          </Link>
+          <div className="mt-8">
+            <Link to="/login" className="text-white/60 hover:text-white transition-colors text-sm underline">
+              Already a member? Sign in →
+            </Link>
+          </div>
         </div>
       </section>
 
-      <footer className="bg-slate-950 py-20 px-6 text-center text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col items-center">
-          <div className="flex items-center gap-2 mb-4 group cursor-pointer">
-            <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white font-black overflow-hidden group-hover:bg-indigo-400 transition-colors">E</div>
-            <span className="text-xl font-bold text-white tracking-tight">EduSync</span>
+      {/* FOOTER */}
+      <footer className="bg-slate-950 py-16 px-6 text-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-black text-sm">E</span>
+            </div>
+            <span className="text-white font-black text-xl tracking-tighter">EduSync</span>
           </div>
-          <p className="font-medium text-slate-400">Bridging knowledge across campuses.</p>
+          <p className="text-slate-500 max-w-md">Bridging knowledge across campuses. Empowering the next generation of Indian engineers.</p>
           
-          <div className="flex flex-wrap justify-center gap-8 mt-12 text-sm font-bold uppercase tracking-widest">
-            <Link to="/404" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link to="/404" className="hover:text-white transition-colors">Terms of Use</Link>
-            <Link to="/404" className="hover:text-white transition-colors">Contact</Link>
-            <a href="https://github.com" className="hover:text-white transition-colors">GitHub</a>
+          <div className="flex flex-wrap justify-center gap-8 text-slate-500 text-sm font-medium mt-4">
+            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-white transition-colors">Terms of Use</a>
+            <a href="#" className="hover:text-white transition-colors">Contact</a>
+            <a href="#" className="hover:text-white transition-colors">GitHub</a>
           </div>
+
+          <div className="h-px w-full max-w-xl bg-slate-900 my-8" />
           
-          <div className="mt-20 pt-8 border-t border-white/5 w-full text-[10px] uppercase font-black tracking-[0.2em] opacity-40 leading-relaxed">
+          <p className="text-slate-600 text-xs">
             HackIndia 2026 Submission · Team Error404 · Built with ❤️ for Indian students
-          </div>
+          </p>
         </div>
       </footer>
     </div>

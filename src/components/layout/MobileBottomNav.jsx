@@ -1,5 +1,6 @@
+import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Compass, BookOpen, MessageSquare, User } from 'lucide-react'
+import { LayoutDashboard, Compass, BookOpen, User, Bell, MessageSquare } from 'lucide-react'
 
 export default function MobileBottomNav() {
   const location = useLocation()
@@ -9,29 +10,24 @@ export default function MobileBottomNav() {
     { icon: Compass, label: 'Explore', path: '/explore' },
     { icon: BookOpen, label: 'Vault', path: '/vault' },
     { icon: MessageSquare, label: 'Chat', path: '/chat' },
-    { icon: User, label: 'Profile', path: '/profile' }
+    { icon: User, label: 'Profile', path: '/profile' },
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 md:hidden pb-safe">
-      <div className="flex items-center justify-around h-16">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path
-          return (
-            <Link 
-              key={item.path} 
-              to={item.path}
-              className={`flex flex-col items-center gap-1 transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-400'}`}
-            >
-              <item.icon size={22} />
-              <span className="text-[10px] font-bold tracking-tight">{item.label}</span>
-              {isActive && (
-                <div className="absolute top-0 w-10 h-1 bg-indigo-600 rounded-b-full"></div>
-              )}
-            </Link>
-          )
-        })}
-      </div>
+    <div className="md:hidden fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-lg border-t border-slate-200 px-6 py-4 flex items-center justify-between z-50">
+      {navItems.map((item, idx) => {
+        const isActive = location.pathname.startsWith(item.path)
+        return (
+          <Link 
+            key={idx} 
+            to={item.path} 
+            className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-indigo-600 scale-110 font-bold' : 'text-slate-400'}`}
+          >
+            <item.icon size={24} />
+            <span className="text-[10px] font-medium tracking-tighter uppercase">{item.label}</span>
+          </Link>
+        )
+      })}
     </div>
   )
 }
