@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { 
   User, BookOpen, GraduationCap, Laptop, 
   ArrowRight, ArrowLeft, CheckCircle2, 
-  Zap, Star, Rocket, Plus, X
+  Zap, Star, Rocket, Plus, X, Award
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
@@ -28,7 +28,6 @@ export default function Onboarding() {
   const [selectedWantLearn, setSelectedWantLearn] = useState([])
   const [customSkill, setCustomSkill] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [avatarPreview, setAvatarPreview] = useState(null)
   
   const navigate = useNavigate()
   const { user, profile, updateProfile } = useAuthStore()
@@ -43,9 +42,9 @@ export default function Onboarding() {
 
   // Animation variants
   const slideVariants = {
-    enter: (direction) => ({ x: direction > 0 ? 40 : -40, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (direction) => ({ x: direction > 0 ? -40 : 40, opacity: 0 })
+    enter: (direction) => ({ x: direction > 0 ? 50 : -50, opacity: 0, scale: 0.95 }),
+    center: { x: 0, opacity: 1, scale: 1 },
+    exit: (direction) => ({ x: direction > 0 ? -50 : 50, opacity: 0, scale: 0.95 })
   }
 
   const nextStep = () => {
@@ -66,13 +65,6 @@ export default function Onboarding() {
     }
   }
 
-  const addCustomSkill = (list, setList) => {
-    if (customSkill && !list.includes(customSkill) && list.length < 8) {
-      setList([...list, customSkill])
-      setCustomSkill('')
-    }
-  }
-
   const onFinish = async (data) => {
     setIsSubmitting(true)
     try {
@@ -83,25 +75,14 @@ export default function Onboarding() {
           department: data.department,
           year_of_study: parseInt(data.yearOfStudy),
           bio: data.bio,
-          avatar_url: avatarPreview || profile?.avatar_url,
+          learning_goals: selectedWantLearn,
+          teaching_skills: selectedCanTeach,
           onboarding_completed: true,
           karma_balance: 100 // Starting bonus
         })
         .eq('id', user.id)
 
       if (error) throw error
-
-      // Insert skills
-      if (selectedCanTeach.length > 0) {
-        const skillsToInsert = selectedCanTeach.map(s => ({
-          title: s,
-          category: 'Other',
-          mentor_id: user.id,
-          campus_id: profile?.campus_id,
-          status: 'active'
-        }))
-        await supabase.from('skills').insert(skillsToInsert)
-      }
 
       confetti({
         particleCount: 150,
@@ -110,8 +91,15 @@ export default function Onboarding() {
         colors: ['#4f46e5', '#10b981', '#f59e0b']
       })
 
-      updateProfile({ ...data, onboarding_completed: true, karma_balance: 100 })
-      toast.success(`Welcome to EduSync, ${data.fullName.split(' ')[0]}! 🚀`)
+      updateProfile({ 
+        ...data, 
+        learning_goals: selectedWantLearn,
+        teaching_skills: selectedCanTeach,
+        onboarding_completed: true, 
+        karma_balance: 100 
+      })
+      
+      toast.success(`Profile Activated! Welcome to the Nexus, ${data.fullName.split(' ')[0]}.`)
       setTimeout(() => navigate('/dashboard'), 2000)
     } catch (err) {
       toast.error(err.message)
@@ -120,24 +108,30 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Background Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
+
+      <div className="w-full max-w-xl relative z-10">
         {/* Progress Bar */}
-        <div className="mb-12">
-          <div className="flex justify-between text-xs font-black text-slate-400 mb-3 uppercase tracking-widest">
-            <span>Step {step} of 5</span>
-            <span>{Math.round((step / 5) * 100)}% Complete</span>
+        <div className="mb-10 px-4">
+          <div className="flex justify-between items-end mb-4">
+            <div>
+              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Activation Phase</span>
+              <h3 className="text-white font-black text-xl font-outfit">Step {step} of 5</h3>
+            </div>
+            <span className="text-white/40 font-black text-sm uppercase tracking-widest">{Math.round((step / 5) * 100)}%</span>
           </div>
-          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${(step / 5) * 100}%` }}
-              className="h-full bg-indigo-600 shadow-[0_0_10px_rgba(79,70,229,0.5)]"
+              className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 shadow-[0_0_20px_rgba(79,70,229,0.4)]"
             />
           </div>
         </div>
 
-        <div className="bg-white rounded-[2rem] shadow-2xl shadow-indigo-100/50 p-8 md:p-12 min-h-[500px] flex flex-col border border-slate-100">
+        <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-2xl p-8 md:p-12 min-h-[550px] flex flex-col">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={step}
@@ -146,28 +140,32 @@ export default function Onboarding() {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.4, ease: "easeInOut" }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1 flex flex-col"
             >
               {/* STEP 1: WELCOME */}
               {step === 1 && (
                 <div className="flex flex-col items-center text-center">
                   <motion.div 
-                    animate={{ rotate: [0, 10, -10, 10, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="mb-8"
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    className="mb-10 relative"
                   >
+                    <div className="absolute inset-0 bg-indigo-500 blur-3xl opacity-20 rounded-full" />
                     <Avatar size="2xl" seed={profile?.full_name || 'new-user'} ring />
-                    <div className="absolute -bottom-2 -right-2 bg-indigo-600 text-white p-2 rounded-xl shadow-lg ring-4 ring-white">
-                      <Rocket size={20} />
+                    <div className="absolute -bottom-2 -right-2 bg-indigo-600 text-white p-3 rounded-2xl shadow-xl border-4 border-[#0f172a]">
+                      <Rocket size={24} />
                     </div>
                   </motion.div>
-                  <h1 className="text-3xl font-black text-slate-900 mb-4 font-outfit">Hey {profile?.full_name?.split(' ')[0] || 'User'}! Welcome to EduSync 🎉</h1>
-                  <p className="text-slate-500 text-lg leading-relaxed mb-12">
-                    Let's set up your profile in 4 quick steps so we can find the right people for you.
+                  <h1 className="text-4xl font-black text-white mb-6 font-outfit leading-tight tracking-tighter">
+                    Greetings, {profile?.full_name?.split(' ')[0] || 'Seeker'}! <br />
+                    The Nexus awaits. 🌌
+                  </h1>
+                  <p className="text-slate-400 text-lg leading-relaxed mb-12 font-medium max-w-sm">
+                    In just 4 steps, we will synchronize your interests and unlock your potential within the campus network.
                   </p>
-                  <Button onClick={nextStep} fullWidth size="lg">
-                    Let's Go
+                  <Button onClick={nextStep} fullWidth size="lg" className="py-6 rounded-2xl text-lg shadow-xl shadow-indigo-600/20 active:scale-95">
+                    Begin Synchronization
                     <ArrowRight className="ml-2" />
                   </Button>
                 </div>
@@ -176,76 +174,55 @@ export default function Onboarding() {
               {/* STEP 2: PROFILE DETAILS */}
               {step === 2 && (
                 <div className="flex flex-col h-full">
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-black text-slate-900 mb-2 font-outfit">Your Profile</h2>
-                    <p className="text-slate-500">Help the community get to know you.</p>
+                  <div className="mb-10">
+                    <h2 className="text-3xl font-black text-white mb-3 font-outfit tracking-tight">Identify Yourself</h2>
+                    <p className="text-slate-400 font-medium">Your academic coordinates in the system.</p>
                   </div>
 
-                  <div className="space-y-5 flex-1">
-                    <div className="flex items-center gap-6 mb-4">
-                      <Avatar size="xl" src={avatarPreview} seed={profile?.full_name} ring border />
-                      <div className="flex-1">
-                        <label className="text-sm font-bold text-slate-700 block mb-2">Profile Picture</label>
-                        <input 
-                          type="file" 
-                          id="avatar" 
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={(e) => {
-                            if (e.target.files?.[0]) {
-                              setAvatarPreview(URL.createObjectURL(e.target.files[0]))
-                            }
-                          }}
-                        />
-                        <label htmlFor="avatar" className="text-xs text-indigo-600 font-bold px-4 py-2 border-2 border-indigo-100 rounded-xl hover:bg-indigo-50 cursor-pointer transition-all inline-block">
-                          Change Photo
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase text-slate-500 tracking-widest pl-1">Department</label>
+                  <div className="space-y-8 flex-1">
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-indigo-400 tracking-widest ml-1">Focus Area</label>
                         <select 
                           {...register('department', { required: true })}
-                          className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                          className="w-full px-5 py-4.5 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-indigo-500 outline-none text-white font-bold transition-all appearance-none cursor-pointer"
                         >
-                          <option value="">Select...</option>
-                          {['CS', 'Electronics', 'Mechanical', 'Civil', 'Mathematics', 'Physics', 'Chemistry', 'Other'].map(d => (
-                            <option key={d} value={d}>{d}</option>
+                          <option value="" className="bg-slate-900">Choose...</option>
+                          {['Computer Sci', 'Electronics', 'Mechanical', 'Aerospace', 'Mathematics', 'B-School', 'Design', 'Other'].map(d => (
+                            <option key={d} value={d} className="bg-slate-900">{d}</option>
                           ))}
                         </select>
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase text-slate-500 tracking-widest pl-1">Year</label>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-indigo-400 tracking-widest ml-1">Current Cycle</label>
                         <select 
                           {...register('yearOfStudy', { required: true })}
-                          className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                          className="w-full px-5 py-4.5 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-indigo-500 outline-none text-white font-bold transition-all appearance-none cursor-pointer"
                         >
                           {[1, 2, 3, 4].map(y => (
-                            <option key={y} value={y}>{y}{y === 1 ? 'st' : y === 2 ? 'nd' : y === 3 ? 'rd' : 'th'} Year</option>
+                            <option key={y} value={y} className="bg-slate-900">Year {y}</option>
                           ))}
                         </select>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between pl-1">
-                        <label className="text-xs font-black uppercase text-slate-500 tracking-widest">About You</label>
-                        <span className="text-[10px] text-slate-400 font-bold">{watch('bio')?.length || 0}/100</span>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center ml-1">
+                        <label className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">Public Intel (Bio)</label>
+                        <span className="text-[10px] text-white/20 font-black">{watch('bio')?.length || 0}/120</span>
                       </div>
                       <textarea 
-                        {...register('bio', { maxLength: 100 })}
-                        rows="3"
-                        placeholder="I love tinkering with drones and build React apps..."
-                        className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                        {...register('bio', { maxLength: 120, required: true })}
+                        rows="4"
+                        placeholder="e.g., Aspiring VLSI designer. Love building flight controllers and teaching Python basics."
+                        className="w-full px-6 py-5 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-indigo-500 outline-none text-white font-medium transition-all resize-none shadow-inner placeholder:text-white/10"
                       />
                     </div>
                   </div>
 
                   <div className="flex gap-4 mt-8">
-                    <Button variant="ghost" onClick={prevStep} className="flex-1">Back</Button>
-                    <Button onClick={nextStep} className="flex-1">Continue</Button>
+                    <button onClick={prevStep} className="flex-1 py-4.5 text-white/40 font-black uppercase tracking-widest text-xs hover:text-white transition-colors">Go Back</button>
+                    <Button onClick={nextStep} className="flex-[2] py-5 rounded-2xl shadow-xl shadow-indigo-600/10">Continue Protocol</Button>
                   </div>
                 </div>
               )}
@@ -253,22 +230,23 @@ export default function Onboarding() {
               {/* STEP 3: SKILLS TO TEACH */}
               {step === 3 && (
                 <div className="flex flex-col h-full">
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-black text-slate-900 mb-2 font-outfit">Skills You Can Teach</h2>
-                    <p className="text-slate-500">Pick what you can mentor others in. Max 8.</p>
+                  <div className="mb-10">
+                    <h2 className="text-3xl font-black text-white mb-3 font-outfit tracking-tight">Share Your Light</h2>
+                    <p className="text-slate-400 font-medium">Select skills you can mentor others in. (Min 1, Max 8)</p>
                   </div>
 
-                  <div className="flex-1">
-                    <div className="flex flex-wrap gap-2 mb-8">
+                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="flex flex-wrap gap-3 mb-10">
                       {SKILL_SUGGESTIONS.map(skill => (
                         <button
                           key={skill}
+                          type="button"
                           onClick={() => toggleSkill(skill, selectedCanTeach, setSelectedCanTeach)}
                           className={`
-                            px-4 py-2 rounded-xl text-sm font-bold transition-all border
+                            px-5 py-3 rounded-2xl text-sm font-black transition-all border-2
                             ${selectedCanTeach.includes(skill) 
-                              ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
-                              : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'}
+                              ? 'bg-indigo-600 border-indigo-400 text-white shadow-xl shadow-indigo-600/30 ring-4 ring-indigo-500/20' 
+                              : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/20 hover:text-white'}
                           `}
                         >
                           {skill}
@@ -277,19 +255,33 @@ export default function Onboarding() {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="text-xs font-black uppercase text-slate-400 tracking-widest ml-1">Other Skill</div>
-                      <div className="flex gap-2">
+                      <div className="text-[10px] font-black uppercase text-indigo-400 tracking-widest ml-1">Custom Listing</div>
+                      <div className="flex gap-3">
                         <input 
                           type="text" 
                           value={customSkill}
                           onChange={(e) => setCustomSkill(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && addCustomSkill(selectedCanTeach, setSelectedCanTeach)}
-                          placeholder="e.g. Arabic, Chess, CAD..."
-                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              if (customSkill) {
+                                toggleSkill(customSkill, selectedCanTeach, setSelectedCanTeach)
+                                setCustomSkill('')
+                              }
+                            }
+                          }}
+                          placeholder="Proprietary skill..."
+                          className="flex-1 px-6 py-4.5 bg-white/5 border-2 border-white/5 rounded-2xl focus:border-indigo-500 outline-none text-white font-bold"
                         />
                         <button 
-                          onClick={() => addCustomSkill(selectedCanTeach, setSelectedCanTeach)}
-                          className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800"
+                          type="button"
+                          onClick={() => {
+                            if (customSkill) {
+                              toggleSkill(customSkill, selectedCanTeach, setSelectedCanTeach)
+                              setCustomSkill('')
+                            }
+                          }}
+                          className="p-4.5 bg-white/10 text-white rounded-2xl hover:bg-white/20 transition-all border border-white/10"
                         >
                           <Plus size={24} />
                         </button>
@@ -298,8 +290,8 @@ export default function Onboarding() {
                   </div>
 
                   <div className="flex gap-4 mt-8">
-                    <Button variant="ghost" onClick={prevStep} className="flex-1">Back</Button>
-                    <Button onClick={nextStep} disabled={selectedCanTeach.length === 0} className="flex-1">Continue</Button>
+                    <button onClick={prevStep} className="flex-1 py-4.5 text-white/40 font-black uppercase tracking-widest text-xs hover:text-white transition-colors">Go Back</button>
+                    <Button onClick={nextStep} disabled={selectedCanTeach.length === 0} className="flex-[2] py-5 rounded-2xl shadow-xl shadow-indigo-600/10">Synchronize Values</Button>
                   </div>
                 </div>
               )}
@@ -307,136 +299,114 @@ export default function Onboarding() {
               {/* STEP 4: SKILLS TO LEARN */}
               {step === 4 && (
                 <div className="flex flex-col h-full">
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-black text-slate-900 mb-2 font-outfit">What You Want to Learn</h2>
-                    <p className="text-slate-500">We'll use this to match you with mentors.</p>
+                  <div className="mb-10">
+                    <h2 className="text-3xl font-black text-white mb-3 font-outfit tracking-tight">Seek Awareness</h2>
+                    <p className="text-slate-400 font-medium">What knowledge do you wish to acquire? </p>
                   </div>
 
-                  <div className="flex-1">
-                    <div className="flex flex-wrap gap-2 mb-8">
+                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="flex flex-wrap gap-3 mb-10">
                       {SKILL_SUGGESTIONS.map(skill => (
                         <button
                           key={skill}
+                          type="button"
                           onClick={() => toggleSkill(skill, selectedWantLearn, setSelectedWantLearn)}
                           className={`
-                            px-4 py-2 rounded-xl text-sm font-bold transition-all border
+                            px-5 py-3 rounded-2xl text-sm font-black transition-all border-2
                             ${selectedWantLearn.includes(skill) 
-                              ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
-                              : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'}
+                              ? 'bg-purple-600 border-purple-400 text-white shadow-xl shadow-purple-600/30 ring-4 ring-purple-500/20' 
+                              : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/20 hover:text-white'}
                           `}
                         >
                           {skill}
                         </button>
                       ))}
                     </div>
-
-                    <div className="space-y-3">
-                      <div className="text-xs font-black uppercase text-slate-400 tracking-widest ml-1">Other Skill</div>
-                      <div className="flex gap-2">
-                        <input 
-                          type="text" 
-                          value={customSkill}
-                          onChange={(e) => setCustomSkill(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && addCustomSkill(selectedWantLearn, setSelectedWantLearn)}
-                          placeholder="What else do you want to learn?"
-                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-                        />
-                        <button 
-                          onClick={() => addCustomSkill(selectedWantLearn, setSelectedWantLearn)}
-                          className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800"
-                        >
-                          <Plus size={24} />
-                        </button>
-                      </div>
-                    </div>
                   </div>
 
                   <div className="flex gap-4 mt-8">
-                    <Button variant="ghost" onClick={prevStep} className="flex-1">Back</Button>
-                    <Button onClick={nextStep} disabled={selectedWantLearn.length === 0} className="flex-1">Continue</Button>
+                    <button onClick={prevStep} className="flex-1 py-4.5 text-white/40 font-black uppercase tracking-widest text-xs hover:text-white transition-colors">Go Back</button>
+                    <Button onClick={nextStep} disabled={selectedWantLearn.length === 0} className="flex-[2] py-5 rounded-2xl shadow-xl shadow-purple-600/10">Set Learning Loop</Button>
                   </div>
                 </div>
               )}
 
               {/* STEP 5: KARMA INTRO */}
               {step === 5 && (
-                <div className="flex flex-col h-full">
-                  <div className="mb-8 text-center">
-                    <h2 className="text-3xl font-black text-slate-900 mb-2 font-outfit">Here's how Karma works 💫</h2>
-                    <p className="text-slate-500">The engine that powers the EduSync Nexus.</p>
+                <div className="flex flex-col h-full text-center">
+                  <div className="mb-12">
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="w-24 h-24 bg-gradient-to-tr from-amber-400 to-orange-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-amber-500/20 rotate-12"
+                    >
+                      <Award size={48} className="text-white" />
+                    </motion.div>
+                    <h2 className="text-4xl font-black text-white mb-4 font-outfit tracking-tight">The Karma Economy</h2>
+                    <p className="text-slate-400 font-medium leading-relaxed max-w-sm mx-auto">
+                      Knowledge is free, but commitment has value. <br />
+                      Behold your starting balance.
+                    </p>
                   </div>
 
-                  <div className="flex-1 space-y-4">
+                  <div className="flex-1 space-y-6">
                     <motion.div 
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                      className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl"
+                      className="bg-white/5 border border-white/10 p-8 rounded-[2rem] relative overflow-hidden"
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 }}
                     >
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center">
-                          <Star size={20} fill="currentColor" />
-                        </div>
-                        <div className="text-sm font-black text-indigo-900">You start with 100 Karma</div>
+                      <div className="absolute top-0 right-0 p-4 opacity-5">
+                        <Zap size={120} fill="currentColor" />
                       </div>
-                      <div className="h-1.5 w-full bg-indigo-200 rounded-full overflow-hidden">
+                      
+                      <div className="flex flex-col items-center gap-2 relative z-10">
+                        <div className="text-[10px] font-black uppercase text-amber-500 tracking-[0.3em] mb-2">Synchronized Funds</div>
+                        <div className="flex items-center gap-3">
+                          <Star className="text-amber-500" size={32} fill="currentColor" />
+                          <span className="text-6xl font-black text-white font-outfit tracking-tighter">100</span>
+                        </div>
+                        <div className="text-white/40 font-bold mt-2">Karma Credits</div>
+                      </div>
+
+                      <div className="mt-10 h-2 bg-white/5 rounded-full overflow-hidden">
                         <motion.div 
+                          className="h-full bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]"
                           initial={{ width: 0 }}
                           animate={{ width: '100%' }}
-                          transition={{ duration: 1.5, ease: "easeOut" }}
-                          className="h-full bg-indigo-600"
+                          transition={{ duration: 2, ease: "easeOut", delay: 0.8 }}
                         />
                       </div>
-                      <p className="text-[11px] text-indigo-700 mt-3 font-medium">Enough to unlock your first few resources right away.</p>
                     </motion.div>
 
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                      className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl"
-                    >
-                      <div className="flex items-center gap-4 mb-2">
-                        <motion.div 
-                          animate={{ y: [0, -5, 0] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                          className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center"
-                        >
-                          <Zap size={20} fill="currentColor" />
-                        </motion.div>
-                        <div className="text-sm font-black text-emerald-900">Teach to Earn</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-5 bg-white/5 border border-white/5 rounded-2xl text-left">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-500 mb-3">
+                          <Zap size={16} fill="currentColor" />
+                        </div>
+                        <div className="text-[10px] font-black text-white mb-1 uppercase tracking-wider">Teach</div>
+                        <p className="text-[10px] text-slate-500 leading-tight font-medium">Earn credit by sharing what you know.</p>
                       </div>
-                      <p className="text-[11px] text-emerald-700 leading-relaxed font-medium">
-                        Complete a skill session and earn between 50-200 Karma based on complexity. The more you help, the more you learn.
-                      </p>
-                    </motion.div>
-
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-                      className="bg-amber-50 border border-amber-100 p-5 rounded-2xl"
-                    >
-                      <div className="flex items-center gap-4 mb-2">
-                        <motion.div 
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                          className="w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20"
-                        >
-                          <Star size={20} fill="currentColor" />
-                        </motion.div>
-                        <div className="text-sm font-black text-amber-900">Spend to Grow</div>
+                      <div className="p-5 bg-white/5 border border-white/5 rounded-2xl text-left">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-500 mb-3">
+                          <BookOpen size={16} />
+                        </div>
+                        <div className="text-[10px] font-black text-white mb-1 uppercase tracking-wider">Learn</div>
+                        <p className="text-[10px] text-slate-500 leading-tight font-medium">Redeem credits for knowledge & vault access.</p>
                       </div>
-                      <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
-                        Spend your earned Karma to learn new skills or unlock study guides in the Vault. No money. Just knowledge.
-                      </p>
-                    </motion.div>
+                    </div>
                   </div>
 
-                  <div className="mt-8">
+                  <div className="mt-10">
                     <Button 
                       onClick={handleSubmit(onFinish)} 
                       fullWidth 
                       size="lg" 
                       isLoading={isSubmitting}
-                      className="group"
+                      className="py-6 rounded-2xl text-lg group bg-gradient-to-r from-indigo-600 to-purple-600 border-none hover:scale-[1.02] shadow-2xl shadow-indigo-600/20"
                     >
-                      Enter EduSync
-                      <Rocket className="ml-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                      Enter The Nexus
+                      <Rocket className="ml-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                     </Button>
                   </div>
                 </div>
@@ -448,3 +418,4 @@ export default function Onboarding() {
     </div>
   )
 }
+

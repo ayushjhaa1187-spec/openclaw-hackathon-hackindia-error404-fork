@@ -1,11 +1,18 @@
 import { create } from 'zustand'
 
 export const useUIStore = create((set) => ({
-  activeModal: null,
-  sidebarOpen: false,
+  activeModal: null, // 'NewSkill', 'UploadResource', etc.
   toasts: [],
   
   setActiveModal: (modalId) => set({ activeModal: modalId }),
-  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-  setSidebarOpen: (isOpen) => set({ sidebarOpen: isOpen }),
+  closeModal: () => set({ activeModal: null }),
+
+  addToast: (message, type = 'default') => set((state) => ({
+    toasts: [...state.toasts, { id: Date.now(), message, type }]
+  })),
+
+  removeToast: (id) => set((state) => ({
+    toasts: state.toasts.filter((t) => t.id !== id)
+  })),
 }))
+

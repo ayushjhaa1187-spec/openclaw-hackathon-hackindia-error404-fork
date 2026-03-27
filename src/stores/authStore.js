@@ -11,18 +11,20 @@ export const useAuthStore = create((set) => ({
     if (session?.user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('*, campuses(*)')
+        .select('*')
         .eq('id', session.user.id)
         .single()
+      
       set({ user: session.user, profile, loading: false })
     } else {
       set({ user: null, profile: null, loading: false })
     }
-    supabase.auth.onAuthStateChange(async (event, session) => {
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('*, campuses(*)')
+          .select('*')
           .eq('id', session.user.id)
           .single()
         set({ user: session.user, profile })
@@ -30,6 +32,8 @@ export const useAuthStore = create((set) => ({
         set({ user: null, profile: null })
       }
     })
+
+    return () => subscription.unsubscribe()
   },
 
   updateProfile: (updates) =>
@@ -40,3 +44,4 @@ export const useAuthStore = create((set) => ({
     set({ user: null, profile: null })
   }
 }))
+
