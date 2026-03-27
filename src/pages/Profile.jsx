@@ -1,109 +1,176 @@
-import React from 'react'
-import { motion } from 'framer-motion'
-import { User, Plus, Star, Shield, Zap, Building2, ExternalLink, Settings, Edit3, Award, Bookmark } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../stores/authStore'
+import { Edit, Zap, Star, Shield, BookOpen, Clock, Settings, LogOut, ChevronRight, MessageSquare, AlertTriangle } from 'lucide-react'
+import Avatar from '../components/ui/Avatar'
+import Card from '../components/ui/Card'
+import Badge from '../components/ui/Badge'
+import Button from '../components/ui/Button'
+import SkillCard from '../components/shared/SkillCard'
+import CampusBadge from '../components/shared/CampusBadge'
+import KarmaChip from '../components/shared/KarmaChip'
 
-const Profile = () => (
-  <motion.div 
-    initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
-    className="p-10 max-w-5xl mx-auto space-y-12 pb-24"
-  >
-    <div className="glass-card overflow-hidden border-white/5 bg-slate-950/20 shadow-2xl">
-      <div className="h-64 bg-gradient-to-r from-indigo-950 via-purple-950 to-emerald-950 relative border-b border-white/10 group">
-         <div className="absolute inset-0 opacity-10 flex items-center justify-center -z-10 group-hover:scale-110 transition-transform">
-            <h1 className="text-[14rem] font-black tracking-tighter text-white">IIT JAMMU</h1>
-         </div>
-         <div className="absolute bottom-6 right-8 flex gap-4">
-            <button className="btn-secondary px-6"><Edit3 size={18} /> Edit Background</button>
-            <button className="btn-secondary px-6"><Settings size={18} /> Global Settings</button>
+export default function Profile() {
+  const { profile, user, signOut } = useAuthStore()
+  const navigate = useNavigate()
+
+  const { data: mySkills, isLoading: skillsLoading } = useQuery({
+    queryKey: ['my-skills', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('skills')
+        .select('*')
+        .eq('mentor_id', user.id)
+      if (error) throw error
+      return data
+    },
+    enabled: !!user
+  })
+
+  // Karma Ledger History
+  const { data: ledger, isLoading: ledgerLoading } = useQuery({
+    queryKey: ['karma-ledger', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('karma_ledger')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data
+    },
+    enabled: !!user
+  })
+
+  const stats = [
+    { label: 'Karma Earned', value: profile?.karma_balance || 0, icon: Star, color: 'amber' },
+    { label: 'Skills Listed', value: mySkills?.length || 0, icon: Zap, color: 'indigo' },
+    { label: 'Swaps Completed', value: 0, icon: Shield, color: 'emerald' },
+    { label: 'Audit Grade', value: profile?.audit_grade || 'New', icon: BookOpen, color: 'purple' }
+  ]
+
+  return (
+    <div className="font-sans min-h-screen bg-white">
+      {/* HEADER GRADIENT */}
+      <div className="h-64 bg-navy relative overflow-hidden flex items-end">
+         <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-rose-600 opacity-80" />
+         <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-indigo-400 rounded-full blur-[100px] opacity-30" />
+         <div className="absolute bottom-[-10%] right-[-10%] w-80 h-80 bg-rose-400 rounded-full blur-[100px] opacity-20" />
+         
+         <div className="max-w-7xl mx-auto w-full px-6 pb-0 relative z-10 flex flex-col md:flex-row items-end gap-6 translate-y-16">
+            <div className="relative group">
+               <Avatar size="xl" src={profile?.avatar_url} name={profile?.full_name} seed={profile?.full_name} className="w-32 h-32 md:w-48 md:h-48 border-[8px] border-white shadow-2xl" />
+               <button className="absolute bottom-2 right-2 p-3 bg-indigo-600 text-white rounded-2xl shadow-xl hover:scale-110 transition-transform"><Edit size={20} /></button>
+            </div>
+            
+            <div className="flex-1 pb-6 text-center md:text-left">
+               <div className="flex flex-wrap gap-2 mb-3 justify-center md:justify-start">
+                  <CampusBadge campus={profile?.campuses?.name} size="lg" />
+                  <Badge variant="indigo" className="bg-indigo-900 border-indigo-700 text-indigo-300 font-black uppercase tracking-widest text-[10px]">{profile?.role}</Badge>
+               </div>
+               <h1 className="text-4xl md:text-6xl font-outfit font-black text-slate-900 tracking-tighter uppercase leading-none">{profile?.full_name}</h1>
+               <p className="mt-2 text-slate-500 font-medium">
+                 {profile?.department}, {profile?.year_of_study} YEAR · <span className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">{profile?.campuses?.domain_suffix || 'edu.sync'}</span>
+               </p>
+            </div>
+
+            <div className="flex gap-4 pb-6 w-full md:w-auto">
+               <Button onClick={() => navigate('/settings')} variant="outline" className="flex-1 border-slate-200 text-slate-700 h-14 rounded-2xl">Edit Profile</Button>
+               <Button onClick={() => signOut()} variant="danger" className="p-4 rounded-2xl"><LogOut size={20} /></Button>
+            </div>
          </div>
       </div>
-      
-      <div className="p-10 relative">
-        <div className="absolute -top-24 left-10 group">
-           <div className="relative">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" className="w-48 h-48 rounded-[3rem] bg-slate-900 p-2 shadow-2xl border-4 border-white/20 group-hover:border-indigo-500 transition-all group-hover:scale-105" />
-              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white border-4 border-slate-950 shadow-xl shadow-indigo-600/20">
-                 <Zap size={24} className="fill-current" />
-              </div>
+
+      <div className="max-w-7xl mx-auto px-6 pt-32 pb-24 grid grid-cols-1 lg:grid-cols-[280px,1fr] gap-12">
+        {/* SIDEBAR */}
+        <div className="space-y-8">
+           <section>
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">About Me</h3>
+              <p className="text-slate-600 font-medium leading-relaxed italic border-l-4 border-indigo-50 pl-6 py-2">
+                {profile?.bio || 'You haven\'t added a bio yet. Mentors with bios get 4x more swap requests!'}
+              </p>
+           </section>
+
+           <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+              {stats.map((s, i) => (
+                <div key={i} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl group">
+                   <div className={`w-10 h-10 rounded-xl bg-${s.color}-50 flex items-center justify-center text-${s.color}-600 mb-4 group-hover:scale-110 transition-transform`}>
+                      <s.icon size={18} />
+                   </div>
+                   <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">{s.label}</p>
+                   <p className="text-xl font-black text-slate-900 font-outfit">{s.value}</p>
+                </div>
+              ))}
            </div>
         </div>
-        
-        <div className="mt-28 flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-               <h1 className="text-5xl font-black text-white m-0 tracking-tighter italic uppercase">Felix Miller</h1>
-               <div className="flex items-center gap-2.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-indigo-400 font-black text-[10px] tracking-[0.2em] uppercase shadow-[0_0_20px_rgba(99,102,241,0.1)]">
-                  Top Tier Helper
-               </div>
-            </div>
-            <div className="flex items-center gap-6 text-slate-400 font-black text-xs tracking-widest uppercase italic">
-               <span className="flex items-center gap-1.5"><Building2 size={16} /> Computer Science Junior</span>
-               <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-               <span className="flex items-center gap-1.5"><Globe size={16} /> IIT Jammu Protocol</span>
-            </div>
-            <p className="max-w-xl text-slate-500 text-sm font-medium leading-relaxed mt-4 italic">
-               "Bridging the gap between theory and execution. Passionate about AI architecture and peer-to-peer knowledge transfers within the Nexus ecosystem."
-            </p>
-          </div>
-          <button className="btn-primary px-12 py-4 h-16 rounded-3xl font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-indigo-600/30">Connect Peer</button>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 p-10 bg-white/5 rounded-[3rem] border border-white/10 shadow-inner">
-           {[
-             { label: 'Karma Earned', value: '1,240', color: 'indigo', icon: Zap },
-             { label: 'Network Swaps', value: '18', color: 'emerald', icon: Star },
-             { label: 'Audit Grade', value: 'Nexus-A', color: 'amber', icon: Shield },
-           ].map((stat, i) => (
-             <div key={i} className="text-center group">
-                <div className={`w-12 h-12 bg-${stat.color}-500/10 text-${stat.color}-500 rounded-2xl mx-auto flex items-center justify-center mb-4 border border-${stat.color}-500/20 group-hover:scale-110 transition-transform`}>
-                   <stat.icon size={24} />
-                </div>
-                <div className={`text-4xl font-black text-white tracking-tighter group-hover:text-${stat.color}-400 transition-colors`}>{stat.value}</div>
-                <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-2">{stat.label}</div>
-             </div>
-           ))}
-        </div>
-        
-        <div className="mt-20 grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div className="space-y-8">
-             <h2 className="text-2xl font-black text-white tracking-tight uppercase italic flex items-center gap-4">
-                <div className="w-1.5 h-8 bg-indigo-500 rounded-full"></div> Nexus Skills Protocol
-             </h2>
-             <div className="flex flex-wrap gap-4">
-                {['React.js Architecture', 'Neural Networks', 'Discrete Math', 'Advanced UI/UX', 'Cloud Infrastructure'].map(s => (
-                  <span key={s} className="px-6 py-3.5 bg-white/5 rounded-2xl border border-white/10 font-black text-xs text-slate-300 shadow-xl hover:bg-white/10 transition-all hover:border-indigo-500/50 cursor-pointer">{s}</span>
-                ))}
-                <button className="px-6 py-3.5 bg-indigo-500/10 text-indigo-400 rounded-2xl font-black text-xs border border-indigo-500/20 hover:bg-indigo-500/20 transition-all flex items-center gap-3 shadow-lg">
-                  <Plus size={18} /> Update Data
-                </button>
-             </div>
-          </div>
+        {/* CONTENT */}
+        <div className="space-y-16">
+           {/* MY SKILLS */}
+           <section>
+              <div className="flex justify-between items-center mb-8">
+                 <h3 className="text-2xl font-outfit font-black text-slate-900 tracking-tight leading-none uppercase">Published Skills</h3>
+                 <Button className="h-12 px-6 rounded-xl font-bold">List New Skill</Button>
+              </div>
 
-          <div className="space-y-8">
-             <h2 className="text-2xl font-black text-white tracking-tight uppercase italic flex items-center gap-4">
-                <div className="w-1.5 h-8 bg-emerald-500 rounded-full"></div> Recent Achievements
-             </h2>
-             <div className="space-y-4">
-                {[
-                  { icon: Award, label: 'Cross-Campus Mentor', desc: 'Facilitated 10+ inter-IIT swaps' },
-                  { icon: Bookmark, label: 'Vault Contributor', desc: 'Top verified resource uploader' },
-                ].map((ach, i) => (
-                  <div key={i} className="flex gap-4 p-5 bg-white/5 border border-white/5 rounded-3xl group hover:bg-white/10 transition-all">
-                     <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-2xl border border-emerald-500/20 group-hover:scale-110 transition-all">
-                        <ach.icon size={24} />
-                     </div>
-                     <div>
-                        <p className="font-black text-white text-sm uppercase tracking-tight">{ach.label}</p>
-                        <p className="text-xs text-slate-500 mt-1 font-medium">{ach.desc}</p>
-                     </div>
-                  </div>
-                ))}
-             </div>
-          </div>
+              {skillsLoading ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[1,2].map(i => <div key={i} className="h-48 bg-slate-100 rounded-3xl animate-pulse" />)}
+                 </div>
+              ) : mySkills?.length > 0 ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {mySkills.map(skill => (
+                      <SkillCard 
+                        key={skill.id} 
+                        skill={{
+                           ...skill,
+                           mentor: profile.full_name,
+                           campus: profile.campuses?.name
+                        }}
+                        onClick={() => navigate(`/explore/skill/${skill.id}`)}
+                      />
+                    ))}
+                 </div>
+              ) : (
+                 <div className="bg-slate-50 border-2 border-dashed border-slate-200 py-16 rounded-[40px] text-center">
+                    <Zap size={32} className="mx-auto text-slate-300 mb-4" />
+                    <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest px-12">Break the ice and share what you know with the Nexus network.</p>
+                 </div>
+              )}
+           </section>
+
+           {/* ACTIVITY HISTORY */}
+           <section>
+              <h3 className="text-2xl font-outfit font-black text-slate-900 tracking-tight leading-none mb-8 uppercase">Activity Timeline</h3>
+              <div className="space-y-4">
+                 {ledgerLoading ? (
+                    [1,2,3].map(i => <div key={i} className="h-16 bg-slate-100 rounded-2xl animate-pulse" />)
+                 ) : ledger?.length > 0 ? (
+                    ledger.map((item, i) => (
+                      <div key={i} className="flex items-center gap-6 p-4 rounded-3xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
+                         <div className={`w-12 h-12 rounded-2xl shadow-sm flex items-center justify-center ${item.type === 'earned' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                            {item.type === 'earned' ? <Star size={20} /> : <Zap size={20} />}
+                         </div>
+                         <div className="flex-1">
+                            <h4 className="font-bold text-slate-900 leading-none mb-1">{item.note || 'Nexus Transaction'}</h4>
+                            <p className="text-xs text-slate-500 font-medium uppercase tracking-widest text-[10px]">{item.source || 'General'}</p>
+                         </div>
+                         <div className={`text-xl font-black font-outfit ${item.type === 'earned' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {item.type === 'earned' ? '+' : '-'}{item.amount}
+                         </div>
+                      </div>
+                    ))
+                 ) : (
+                    <div className="bg-slate-50 border border-slate-100/50 p-6 rounded-3xl text-center">
+                       <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">No transaction history in the ledger yet.</p>
+                    </div>
+                 )}
+              </div>
+           </section>
         </div>
       </div>
     </div>
-  </motion.div>
-)
-
-export default Profile
+  )
+}

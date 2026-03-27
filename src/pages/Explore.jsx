@@ -1,185 +1,192 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Filter, Zap, Star, Shield, Globe, ArrowUpRight, Info, MapPin, Building2, AlertTriangle, Users } from 'lucide-react'
-import { API_URL } from '../config'
-import { MOCK_SKILLS } from '../data/mockData'
+import { supabase } from '../lib/supabase'
+import { Search, SlidersHorizontal, Globe, MapPin, Zap, Info, ChevronDown } from 'lucide-react'
+import { CATEGORIES } from '../utils/constants'
+import { useAuthStore } from '../stores/authStore'
+import SkillCard from '../components/shared/SkillCard'
+import Button from '../components/ui/Button'
+import Spinner from '../components/ui/Spinner'
+import { useNavigate } from 'react-router-dom'
 
-const Explore = () => {
-  const [nexusEnabled, setNexusEnabled] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [results, setResults] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
+const PAGE_SIZE = 9
 
-  useEffect(() => {
-    setIsLoading(true)
-    fetch(`${API_URL}/skills/explore?nexusMode=${nexusEnabled}&skill=${searchQuery}`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setResults(data)
-        } else {
-          // Fallback to mock data if API returns empty or invalid
-          const filteredMock = MOCK_SKILLS.filter(s => 
-            s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-            s.campus.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-          setResults(filteredMock.map(s => ({
-            id: s.id,
-            skill: s.title,
-            name: s.mentor,
-            campus: s.campus,
-            status: s.campus === 'IIT Jammu' ? 'LocalCampus' : 'NexusPartner',
-            karma: s.karma,
-            rating: s.rating
-          })));
-        }
-        setIsLoading(false)
-      })
-      .catch(err => {
-        console.error('Skill API Error:', err)
-        // Fallback to mock data on error
-        const filteredMock = MOCK_SKILLS.filter(s => 
-          s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          s.campus.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setResults(filteredMock.map(s => ({
-          id: s.id,
-          skill: s.title,
-          name: s.mentor,
-          campus: s.campus,
-          status: s.campus === 'IIT Jammu' ? 'LocalCampus' : 'NexusPartner',
-          karma: s.karma,
-          rating: s.rating
-        })));
-        setIsLoading(false)
-      })
-  }, [nexusEnabled, searchQuery])
+export default function Explore() {
+  const { profile } = useAuthStore()
+  const navigate = useNavigate()
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('All')
+  const [nexusMode, setNexusMode] = useState(false)
+  const [sort, setSort] = useState('newest')
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+    isLoading
+  } = useInfiniteQuery({
+    queryKey: ['skills', nexusMode, category, search, sort],
+    queryFn: async ({ pageParam = 0 }) => {
+      let query = supabase
+        .from('skills')
+        .select('*, profiles(full_name, avatar_url, campuses(name))', { count: 'exact' })
+        .eq('status', 'active')
+        .range(pageParam, pageParam + PAGE_SIZE - 1)
+
+      if (!nexusMode && profile?.campus_id) {
+        query = query.eq('campus_id', profile.campus_id)
+      } else if (nexusMode) {
+        query = query.eq('is_nexus', true)
+      }
+
+      if (category !== 'All') {
+        query = query.eq('category', category)
+      }
+
+      if (search) {
+        query = query.ilike('title', `%${search}%`)
+      }
+
+      if (sort === 'newest') query = query.order('created_at', { ascending: false })
+      else if (sort === 'rating') query = query.order('avg_rating', { ascending: false })
+      else if (sort === 'karma_asc') query = query.order('karma_cost', { ascending: true })
+
+      const { data: skills, count, error } = await query
+      if (error) throw error
+      return { skills, nextCursor: skills.length === PAGE_SIZE ? pageParam + PAGE_SIZE : null, count }
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    enabled: !!profile
+  })
+
+  const allSkills = useMemo(() => data?.pages.flatMap(page => page.skills) || [], [data])
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }}
-      className="p-8 max-w-7xl mx-auto space-y-10"
-    >
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex-1 space-y-2">
-          <h1 className="text-4xl font-black text-white tracking-tight m-0">Nexus Explorer</h1>
-          <p className="text-slate-400 text-lg">Bridge the knowledge gap across institutions.</p>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-4 bg-white/5 px-6 py-3 glass-card border-white/10">
-           <div className="flex items-center gap-4">
-              <span className={`text-[10px] font-black uppercase tracking-widest ${!nexusEnabled ? 'text-indigo-400' : 'text-slate-500'}`}>Local Campus</span>
-              <button 
-                onClick={() => setNexusEnabled(!nexusEnabled)}
-                className={`w-12 h-6 rounded-full transition-all relative border border-white/10 ${nexusEnabled ? 'bg-indigo-600' : 'bg-white/5'}`}
-              >
-                <div className={`absolute top-1 w-4 h-4 rounded-full transition-all shadow-lg ${nexusEnabled ? 'left-7 bg-white' : 'left-1 bg-slate-500'}`} />
-              </button>
-              <span className={`text-[10px] font-black uppercase tracking-widest ${nexusEnabled ? 'text-indigo-400' : 'text-slate-500'}`}>Nexus Mode</span>
+    <div className="min-h-screen bg-slate-50 font-sans">
+      {/* FILTER BAR - Sticky */}
+      <div className="sticky top-[64px] z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 py-4 px-6 shadow-sm shadow-slate-200/20">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 items-center">
+           <div className="relative flex-1 w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Search skills, topics, or mentors..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full h-12 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-indigo-600 outline-none font-bold text-slate-700 transition-all placeholder:text-slate-400 placeholder:font-bold"
+              />
            </div>
-           {nexusEnabled && <div className="hidden lg:block w-[1px] h-6 bg-white/10 mx-2"></div>}
-           {nexusEnabled && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                <Globe size={12} className="text-indigo-400" />
-                <span className="text-[10px] font-black uppercase tracking-tighter text-indigo-400">Inter-MOU Active</span>
-              </div>
-           )}
+
+           <div className="flex gap-2 w-full md:w-auto h-12 p-1 bg-slate-100 rounded-2xl border border-slate-200">
+              <button 
+                onClick={() => setNexusMode(false)}
+                className={`flex-1 md:flex-none px-6 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${!nexusMode ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <MapPin size={14} /> My Campus
+              </button>
+              <button 
+                onClick={() => setNexusMode(true)}
+                className={`flex-1 md:flex-none px-6 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${nexusMode ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <Globe size={14} /> Nexus Mode
+              </button>
+           </div>
+           
+           <select 
+             value={sort}
+             onChange={(e) => setSort(e.target.value)}
+             className="h-12 px-6 bg-white border border-slate-200 rounded-2xl focus:border-indigo-600 outline-none font-black text-xs uppercase tracking-widest text-slate-600 cursor-pointer appearance-none shadow-sm"
+           >
+              <option value="newest">Newest First</option>
+              <option value="rating">Highest Rated</option>
+              <option value="karma_asc">Lowest Karma</option>
+           </select>
+        </div>
+
+        {/* Categories Scroller */}
+        <div className="max-w-7xl mx-auto mt-4 overflow-x-auto no-scrollbar py-2">
+           <div className="flex gap-2 min-w-max">
+              {['All', ...CATEGORIES].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest border-2 transition-all ${category === cat ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300 hover:text-slate-600'}`}
+                >
+                  {cat}
+                </button>
+              ))}
+           </div>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-           <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-           <input 
-             value={searchQuery}
-             onChange={(e) => setSearchQuery(e.target.value)}
-             placeholder="Search by skill, campus, or course code..." 
-             className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-medium focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all outline-none text-lg" 
-           />
-        </div>
-        <button className="btn-secondary h-16 px-8 flex items-center gap-3">
-          <Filter size={20} /> Advanced Filters
-        </button>
-      </div>
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {isLoading ? (
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+             {[1,2,3,4,5,6].map(i => (
+               <div key={i} className="w-full h-80 bg-slate-100 rounded-3xl animate-pulse p-8 flex flex-col justify-end gap-4 shadow-sm">
+                  <div className="w-2/3 h-6 bg-slate-200 rounded-full" />
+                  <div className="w-1/2 h-4 bg-slate-200 rounded-full" />
+               </div>
+             ))}
+           </div>
+        ) : allSkills.length > 0 ? (
+           <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+              <AnimatePresence mode="popLayout">
+                {allSkills.map((skill, idx) => (
+                  <motion.div
+                    key={skill.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: idx % 9 * 0.05 }}
+                  >
+                    <SkillCard 
+                      skill={{
+                        ...skill,
+                        mentor: skill.profiles?.full_name,
+                        campus: skill.profiles?.campuses?.name
+                      }}
+                      onClick={() => navigate(`/explore/skill/${skill.id}`)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <AnimatePresence>
-          {results.map((item, i) => (
-            <motion.div 
-              layout
-              key={item.id || i} 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              whileHover={{ y: -8, scale: 1.02 }}
-              className={`glass-card overflow-hidden group border-white/5 ${item.status === 'NexusPartner' ? 'ring-2 ring-indigo-500/30' : ''}`}
-            >
-              <div className={`h-28 p-6 flex items-start justify-between relative overflow-hidden ${item.status === 'NexusPartner' ? 'bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-950' : 'bg-white/5'}`}>
-                 {item.status === 'NexusPartner' && <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Building2 size={120} className="text-white" /></div>}
-                 <div className="p-3 bg-white/10 rounded-2xl text-white border border-white/10">
-                    <Users size={24} />
-                 </div>
-                 <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${item.status === 'NexusPartner' ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/20' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20'}`}>
-                    {item.status}
-                 </span>
+            {hasNextPage && (
+              <div className="text-center pb-24">
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  loading={isFetchingNextPage}
+                  onClick={() => fetchNextPage()}
+                  className="rounded-full px-12"
+                >
+                  Load More Skills
+                </Button>
               </div>
-              
-              <div className="p-8 pt-10 relative">
-                <div className="absolute -top-12 right-8 w-24 h-24 rounded-2xl bg-slate-900 p-1 shadow-2xl border-2 border-white/10 group-hover:border-indigo-500/50 transition-colors">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.name}`} alt="mentor" className="rounded-xl w-full h-full" />
-                  <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-4 border-slate-950 ${item.status !== 'NexusPartner' ? 'bg-emerald-500' : 'bg-indigo-500'}`}></div>
-                </div>
-                
-                <h3 className="text-2xl font-black text-white tracking-tight leading-none group-hover:text-indigo-400 transition-colors uppercase italic">{item.skill}</h3>
-                <p className="text-sm font-bold text-slate-400 mt-2 flex items-center gap-2">
-                  <MapPin size={14} /> {item.campus}
-                </p>
-                
-                <div className="flex items-center gap-6 mt-6 pt-6 border-t border-white/5">
-                   <div className="flex items-center gap-1.5 font-black text-amber-400">
-                      <Star size={16} className="fill-current" /> {item.rating || 4.8}
-                   </div>
-                   <div className="flex items-center gap-1.5 font-black text-indigo-400">
-                      <Zap size={16} className="fill-current" /> {item.karma || 250} Karma
-                   </div>
-                </div>
-
-                <div className="mt-8 flex gap-3">
-                  <button className="flex-1 btn-primary py-3 rounded-xl font-black text-xs uppercase tracking-widest">
-                    Request Swap
-                  </button>
-                  <button className="p-3 btn-secondary rounded-xl hover:text-white transition-colors">
-                     <AlertTriangle size={20} />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+            )}
+           </>
+        ) : (
+           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="py-32 flex flex-col items-center text-center">
+             <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-200 mb-8 border border-white">
+                <Search size={48} className="rotate-12" />
+             </div>
+             <h2 className="text-3xl font-outfit font-black text-slate-900 mb-4 tracking-tight leading-none uppercase">No skills match your search.</h2>
+             <p className="text-slate-500 font-medium max-w-sm mb-12">Try different keywords or clear filters to find what you're looking for.</p>
+             <div className="flex gap-4">
+                <Button onClick={() => { setSearch(''); setCategory('All'); setNexusMode(false); }}>Reset All Filters</Button>
+                {/* Auto Switch to Nexus */}
+                {!nexusMode && <Button variant="outline" onClick={() => setNexusMode(true)}>Try Nexus Mode</Button>}
+             </div>
+           </motion.div>
+        )}
       </div>
-
-      {results.length === 0 && !isLoading && (
-         <div className="text-center py-20 glass-card border-white/5 bg-white/5">
-            <Search size={48} className="mx-auto text-slate-700 mb-6" />
-            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">No mentors found</h3>
-            <p className="text-slate-400 max-w-md mx-auto">Try broadening your search or switching to Nexus Mode to explore other campuses.</p>
-            <button 
-              onClick={() => setNexusEnabled(true)}
-              className="mt-8 btn-primary mx-auto"
-            >
-              Enable Nexus Mode
-            </button>
-         </div>
-      )}
-
-      {isLoading && (
-        <div className="flex justify-center py-20">
-          <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-        </div>
-      )}
-    </motion.div>
+    </div>
   )
 }
-
-export default Explore
