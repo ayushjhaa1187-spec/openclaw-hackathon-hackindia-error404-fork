@@ -16,6 +16,10 @@ export const vaultService = {
       query = query.eq('type', filters.type)
     }
 
+    if (filters.subject && filters.subject !== 'All') {
+      query = query.eq('subject', filters.subject)
+    }
+
     if (filters.campusId) {
       query = query.eq('campus_id', filters.campusId)
     }

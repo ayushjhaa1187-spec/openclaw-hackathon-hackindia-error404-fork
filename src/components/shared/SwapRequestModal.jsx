@@ -7,6 +7,9 @@ import confetti from 'canvas-confetti'
 import Button from '../ui/Button'
 import Avatar from '../ui/Avatar'
 import { useAuthStore } from '../../stores/authStore'
+import { supabase } from '../../lib/supabase'
+import { karmaService } from '../../services/karmaService'
+
 
 export default function SwapRequestModal({ skill, onClose }) {
   const [step, setStep] = useState(1)
@@ -24,9 +27,22 @@ export default function SwapRequestModal({ skill, onClose }) {
     }
 
     try {
-      // Logic for insert to skill_requests would go here
-      // Logic for updating profile karma balance
-      
+      // 1. Insert Request
+      const { error: requestError } = await supabase
+        .from('skill_requests')
+        .insert({
+          skill_id: skill.id,
+          requester_id: profile.id,
+          message: 'Swap requested.',
+          status: 'pending'
+        })
+
+      if (requestError) throw requestError
+
+      // 2. We don't deduct Karma until it is ACCEPTED by the mentor.
+      // But for MVP hackathon, we might just deduct it immediately or leave it pending.
+      // Let's just create the request for now and notify.
+
       confetti({
         particleCount: 100,
         spread: 70,

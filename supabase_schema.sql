@@ -184,3 +184,20 @@ BEGIN
   UPDATE resources SET download_count = download_count + 1 WHERE id = row_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPC for incrementing karma
+CREATE OR REPLACE FUNCTION increment_karma(user_id UUID, amount INTEGER)
+RETURNS void AS $$
+BEGIN
+  UPDATE profiles SET karma_balance = karma_balance + amount WHERE id = user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPC for decrementing karma
+CREATE OR REPLACE FUNCTION decrement_karma(user_id UUID, amount INTEGER)
+RETURNS void AS $$
+BEGIN
+  UPDATE profiles SET karma_balance = karma_balance - amount WHERE id = user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+

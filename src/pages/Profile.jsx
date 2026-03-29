@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Building2, GraduationCap, Laptop, BookOpen, 
@@ -8,6 +9,8 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { MOCK_SKILLS } from '../data/mockData'
+import { useQuery } from '@tanstack/react-query'
+import { karmaService } from '../services/karmaService'
 import Button from '../components/ui/Button'
 import Avatar from '../components/ui/Avatar'
 
@@ -16,14 +19,20 @@ const TABS = ['My Skills', 'Reviews', 'History', 'Karma Ledger']
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('My Skills')
   const { profile } = useAuthStore()
+  const { data: ledgerItems = [], isLoading: isLoadingLedger } = useQuery({
+    queryKey: ['karma-ledger', profile?.id],
+    queryFn: () => karmaService.getTransactionHistory(profile.id),
+    enabled: !!profile?.id && activeTab === 'Karma Ledger'
+  })
   
-  // Example Karma Ledger items
-  const ledgerItems = [
-    { type: 'earned', label: 'VLSI Session with Priya', amount: 80, date: 'Oct 12' },
-    { type: 'spent', label: 'React.js Session with Arjun', amount: -60, date: 'Oct 10' },
-    { type: 'earned', label: 'Manual Verification Bonus', amount: 100, date: 'Oct 08' },
-    { type: 'spent', label: 'Vault Access: DSA Notes', amount: -15, date: 'Oct 05' },
-  ]
+  // Format dates and display labels
+  const formattedLedger = ledgerItems.map(item => ({
+    ...item,
+    label: item.note || item.source || 'Karma Transaction',
+    amount: item.amount,
+    type: item.type === 'earned' ? 'earned' : 'spent',
+    date: new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }))
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 pb-24 lg:pb-10">
@@ -155,12 +164,14 @@ export default function Profile() {
                       </div>
                     </div>
                   ))}
-                  <button className="w-full py-10 border-4 border-dashed border-slate-100 rounded-[2rem] text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 transition-all flex flex-col items-center justify-center gap-2 group">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                      <Plus size={24} />
-                    </div>
-                    <span className="font-black uppercase tracking-widest text-xs">Add New Listing</span>
-                  </button>
+                  <Link to="/list-skill" className="w-full">
+                    <button className="w-full py-10 border-4 border-dashed border-slate-100 rounded-[2rem] text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 transition-all flex flex-col items-center justify-center gap-2 group">
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                        <Plus size={24} />
+                      </div>
+                      <span className="font-black uppercase tracking-widest text-xs">Add New Listing</span>
+                    </button>
+                  </Link>
                 </div>
               )}
 
@@ -210,17 +221,31 @@ export default function Profile() {
                     <div className="col-span-3 text-center">Amount</div>
                     <div className="col-span-3 text-right">Date</div>
                   </div>
-                  {ledgerItems.map((item, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-4 px-4 py-5 bg-slate-50/50 hover:bg-slate-50 rounded-2xl transition-all items-center">
-                      <div className="col-span-6">
-                        <h4 className="text-sm font-black text-slate-900">{item.label}</h4>
-                      </div>
-                      <div className={`col-span-3 text-center text-sm font-black tracking-tighter ${item.type === 'earned' ? 'text-emerald-600' : 'text-rose-500'}`}>
-                        {item.type === 'earned' ? '+' : ''}{item.amount}
-                      </div>
-                      <div className="col-span-3 text-right text-xs font-black text-slate-400 uppercase tracking-tighter">{item.date}</div>
+                  
+                  {isLoadingLedger ? (
+                    <div className="py-20 flex flex-col items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Retrieving Ledger History...</p>
                     </div>
-                  ))}
+                  ) : formattedLedger.length > 0 ? (
+                    formattedLedger.map((item, idx) => (
+                      <div key={idx} className="grid grid-cols-12 gap-4 px-4 py-5 bg-slate-50/50 hover:bg-slate-50 rounded-2xl transition-all items-center">
+                        <div className="col-span-6">
+                          <h4 className="text-sm font-black text-slate-900">{item.label}</h4>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{item.source}</p>
+                        </div>
+                        <div className={`col-span-3 text-center text-sm font-black tracking-tighter ${item.type === 'earned' ? 'text-emerald-600' : 'text-rose-500'}`}>
+                          {item.type === 'earned' ? '+' : ''}{item.amount}
+                        </div>
+                        <div className="col-span-3 text-right text-xs font-black text-slate-400 uppercase tracking-tighter">{item.date}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-20 text-center">
+                      <History size={48} className="mx-auto text-slate-200 mb-4" />
+                      <p className="text-slate-400 font-medium italic">No transactions recorded in your protocol yet.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </motion.div>

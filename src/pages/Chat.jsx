@@ -22,32 +22,45 @@ export default function Chat() {
   const [message, setMessage] = useState('')
   const messagesEndRef = useRef(null)
 
+  const [aiMessages, setAiMessages] = useState([
+    { id: '1', sender_id: 'nexus-ai', content: "Greetings! I am Nexus AI. I can help recommend skills, match you with mentors, or explain the Karma protocol.", created_at: new Date().toISOString() }
+  ])
+
   // 1. Fetch Conversations (Sidebar)
-  const { data: conversations, isLoading: loadingChats } = useQuery({
+  const { data: dbConversations, isLoading: loadingChats } = useQuery({
     queryKey: ['conversations', profile.id],
     queryFn: () => chatService.getConversations(profile.id),
     enabled: !!profile.id
   })
+  
+  const conversations = useMemo(() => {
+    return [
+      {
+        id: 'nexus-ai',
+        last_message: aiMessages[aiMessages.length - 1]?.content || 'Online.',
+        is_nexus_bridge: true,
+        participant_ids: [profile?.id, 'nexus-ai']
+      },
+      ...(dbConversations || [])
+    ]
+  }, [dbConversations, aiMessages, profile?.id])
 
   // 2. Fetch Messages (Current Thread)
-  const { data: messages, isLoading: loadingMsgs } = useQuery({
+  const { data: dbMessages, isLoading: loadingMsgs } = useQuery({
     queryKey: ['messages', conversationId],
     queryFn: () => chatService.getMessages(conversationId),
-    enabled: !!conversationId
+    enabled: !!conversationId && conversationId !== 'nexus-ai'
   })
 
-  // 3. Real-time Subscription
+  const messages = conversationId === 'nexus-ai' ? aiMessages : dbMessages
+  const [isAiTyping, setIsAiTyping] = useState(false)
+
+  // 3. Real-time Subscription (skip for ai)
   useEffect(() => {
-    if (!conversationId) return
+    if (!conversationId || conversationId === 'nexus-ai') return
     
     const subscription = chatService.subscribeToMessages(conversationId, (newMsg) => {
-      // Optimistically update or invalidate
-      queryClient.setQueryData(['messages', conversationId], (oldData) => {
-        if (!oldData) return [newMsg]
-        // Avoid duplicate if it's the one we just sent
-        if (oldData.some(m => m.id === newMsg.id)) return oldData
-        return [...oldData, newMsg]
-      })
+      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] })
     })
 
     return () => {
@@ -65,19 +78,42 @@ export default function Chat() {
     }
   })
 
-  const currentChat = useMemo(() => 
-    conversations?.find(c => c.id === conversationId), 
-    [conversations, conversationId]
-  )
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, isAiTyping])
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault()
     if (!message.trim()) return
-    sendMutation.mutate(message)
+
+    if (conversationId === 'nexus-ai') {
+      const userMsg = { id: Date.now().toString(), sender_id: profile.id, content: message, created_at: new Date().toISOString() }
+      setAiMessages(prev => [...prev, userMsg])
+      setMessage('')
+      setIsAiTyping(true)
+      
+      try {
+        const { getRecommendations } = await import('../lib/gemini') // We reuse or import a new chat function, but let's just use the model directly
+        const { model } = await import('../lib/gemini')
+        if (model) {
+          const chat = model.startChat({
+            history: aiMessages.map(m => ({
+              role: m.sender_id === 'nexus-ai' ? 'model' : 'user',
+              parts: [{ text: m.content }]
+            }))
+          })
+          const result = await chat.sendMessage(message)
+          const response = await result.response
+          setAiMessages(prev => [...prev, { id: Date.now().toString(), sender_id: 'nexus-ai', content: response.text(), created_at: new Date().toISOString() }])
+        }
+      } catch (err) {
+        toast.error('Nexus Neural Link offline (API Key Missing).')
+      } finally {
+        setIsAiTyping(false)
+      }
+    } else {
+      sendMutation.mutate(message)
+    }
   }
 
   if (loadingChats) return <Spinner fullscreen />

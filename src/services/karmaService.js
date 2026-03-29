@@ -22,9 +22,9 @@ export const karmaService = {
 
   getTransactionHistory: async (userId) => {
     const { data, error } = await supabase
-      .from('karma_transactions')
-      .select('*, resources(title)')
-      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .from('karma_ledger')
+      .select('*')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
     if (error) throw error
     return data
@@ -35,22 +35,27 @@ export const karmaService = {
     const { data: profile } = await supabase.from('profiles').select('karma_balance').eq('id', userId).single()
     if (profile.karma_balance < cost) throw new Error('Insufficient Karma')
 
-    // 2. Perform Transaction
-    const { data: transaction, error: txError } = await supabase
-      .from('karma_transactions')
+    // 2. Perform Transaction Record
+    const { data: entry, error: txError } = await supabase
+      .from('karma_ledger')
       .insert({
-        sender_id: userId,
-        amount: cost,
-        resource_id: resourceId,
-        type: 'unlock',
-        description: `Unlocked Resource #${resourceId}`
+        user_id: userId,
+        amount: -cost,
+        type: 'spent',
+        source: 'Resource Unlock',
+        note: `Unlocked Resource: ${resourceId}`
       })
 
     if (txError) throw txError
 
-    // 3. Update Balances (Simulated Atomic)
-    await supabase.rpc('decrement_karma', { user_id: userId, amount: cost })
+    // 3. Update Balance
+    const { error: balanceError } = await supabase
+      .from('profiles')
+      .update({ karma_balance: profile.karma_balance - cost })
+      .eq('id', userId)
     
-    return transaction
+    if (balanceError) throw balanceError
+
+    return entry
   }
 }

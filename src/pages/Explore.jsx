@@ -1,30 +1,73 @@
-import React, { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, SlidersHorizontal, Globe, X, Zap, ArrowRight, Star } from 'lucide-react'
 import { toast } from 'sonner'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../stores/authStore'
 import { MOCK_SKILLS, MOCK_CAMPUSES } from '../data/mockData'
 import SkillCard from '../components/shared/SkillCard'
 import SwapRequestModal from '../components/shared/SwapRequestModal'
 import Button from '../components/ui/Button'
+import Spinner from '../components/ui/Spinner'
 
-const CATEGORIES = ['All', 'Coding', 'Electronics', 'Design', 'Mechanical', 'Math', 'Languages', 'Robotics']
+const CATEGORIES = ['All', 'Engineering', 'Design', 'Business', 'Arts', 'Languages', 'Science', 'Writing', 'Tech']
 
 export default function Explore() {
+  const { profile } = useAuthStore()
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
   const [isNexusMode, setIsNexusMode] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [selectedSkillForSwap, setSelectedSkillForSwap] = useState(null)
   
-  const filteredSkills = useMemo(() => {
-    return MOCK_SKILLS.filter(skill => {
-      const matchesSearch = skill.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           skill.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
-      const matchesCategory = activeCategory === 'All' || skill.category === activeCategory
+  // Real skills fetching
+  const { data: skills = [], isLoading } = useQuery({
+    queryKey: ['explore-skills', isNexusMode, profile?.campus_id, activeCategory],
+    queryFn: async () => {
+      let query = supabase
+        .from('skills')
+        .select(`
+          *,
+          profile:mentor_id (
+            full_name, 
+            avatar_url, 
+            campus_id, 
+            role,
+            campuses:campus_id (name, short_code)
+          )
+        `)
       
-      return matchesSearch && matchesCategory && (isNexusMode ? true : !skill.is_nexus)
-    })
-  }, [searchQuery, activeCategory, isNexusMode])
+      if (!isNexusMode && profile?.campus_id) {
+        query = query.eq('campus_id', profile.campus_id)
+      }
+
+      if (activeCategory !== 'All') {
+        query = query.eq('category', activeCategory)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
+      if (error) throw error
+      
+      return data.map(s => ({
+        ...s,
+        mentor: s.profile?.full_name || 'EduSync Peer',
+        campus: s.profile?.campuses?.short_code || 'Inter',
+        avatar_url: s.profile?.avatar_url,
+        tags: s.tags || []
+      }))
+    },
+    enabled: !!profile
+  })
+
+  // Local filter for search
+  const filteredSkills = skills.filter(skill => {
+    const matchesSearch = skill.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         skill.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
+    return matchesSearch
+  })
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 pb-24 lg:pb-10">
@@ -141,25 +184,34 @@ export default function Explore() {
 
       {/* Skills Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-        {filteredSkills.map((skill) => (
-          <SkillCard 
-            key={skill.id} 
-            skill={skill} 
-            onOpenDetail={() => {}} 
-            onRequestSwap={(s) => setSelectedSkillForSwap(s)}
-            onReport={() => toast.warning('Report submitted for admin review.')}
-          />
-        ))}
-        
-        {filteredSkills.length === 0 && (
-          <div className="col-span-full py-24 text-center">
-            <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-slate-300">
-              <Search size={40} />
-            </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2 font-outfit">No skills found</h3>
-            <p className="text-slate-500 mb-8 max-w-sm mx-auto font-medium">Try adjusting your filters or search keywords to find what you're looking for.</p>
-            <Button variant="outline" onClick={() => { setSearchQuery(''); setActiveCategory('All'); setIsNexusMode(true); }}>Reset All Filters</Button>
+        {isLoading ? (
+          <div className="col-span-full py-24 flex flex-col items-center justify-center -translate-y-12">
+            <Spinner />
+            <p className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Establishing Nexus Connection...</p>
           </div>
+        ) : (
+          <>
+            {filteredSkills.map((skill) => (
+              <SkillCard 
+                key={skill.id} 
+                skill={skill} 
+                onOpenDetail={(skill) => navigate(`/explore/skill/${skill.id}`)} 
+                onRequestSwap={(s) => setSelectedSkillForSwap(s)}
+                onReport={() => toast.warning('Report submitted for admin review.')}
+              />
+            ))}
+            
+            {filteredSkills.length === 0 && (
+              <div className="col-span-full py-24 text-center border-2 border-dashed border-slate-100 rounded-[3rem]">
+                <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-slate-300">
+                  <Search size={40} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2 font-outfit">No skills found</h3>
+                <p className="text-slate-500 mb-8 max-w-sm mx-auto font-medium">Try adjusting your filters or enabling 'Nexus Mode' to see skills from other partner campuses.</p>
+                <Button variant="outline" onClick={() => { setSearchQuery(''); setActiveCategory('All'); setIsNexusMode(true); }}>Reset All Filters</Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
