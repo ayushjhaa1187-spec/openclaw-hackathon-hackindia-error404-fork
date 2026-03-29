@@ -520,14 +520,34 @@ export default function Landing() {
       </section>
 
       {/* SHORTCUT LINKS SECTION */}
-      <section className="bg-slate-900 py-12 border-t border-slate-800 hidden md:block">
+      <section className="bg-slate-900 border-t border-slate-800 relative z-10 overflow-hidden py-16">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+        
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-wrap justify-center gap-x-16 gap-y-4">
-            <Link to="/explore" className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] hover:text-indigo-400 transition-colors">Find Mentors</Link>
-            <Link to="/vault" className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] hover:text-indigo-400 transition-colors">Study Vault</Link>
-            <Link to="/campus-charter" className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] hover:text-indigo-400 transition-colors">Nexus Protocol</Link>
-            <Link to="/honor-code" className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] hover:text-indigo-400 transition-colors">Honor Code</Link>
-            <Link to="/help" className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] hover:text-indigo-400 transition-colors">Help Center</Link>
+          <div className="flex flex-col items-center">
+            <div className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-8 opacity-60">Quick Navigation</div>
+            <div className="flex flex-wrap justify-center gap-x-12 gap-y-6 md:gap-x-20">
+              <Link to="/explore" className="group flex flex-col items-center gap-3">
+                <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">Find Mentors</span>
+                <div className="h-0.5 w-0 group-hover:w-full bg-indigo-500 transition-all duration-300" />
+              </Link>
+              <Link to="/vault" className="group flex flex-col items-center gap-3">
+                <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">Study Vault</span>
+                <div className="h-0.5 w-0 group-hover:w-full bg-indigo-500 transition-all duration-300" />
+              </Link>
+              <Link to="/campus-charter" className="group flex flex-col items-center gap-3">
+                <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">Nexus Protocol</span>
+                <div className="h-0.5 w-0 group-hover:w-full bg-indigo-500 transition-all duration-300" />
+              </Link>
+              <Link to="/honor-code" className="group flex flex-col items-center gap-3">
+                <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">Honor Code</span>
+                <div className="h-0.5 w-0 group-hover:w-full bg-indigo-500 transition-all duration-300" />
+              </Link>
+              <Link to="/help" className="group flex flex-col items-center gap-3">
+                <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">Help Center</span>
+                <div className="h-0.5 w-0 group-hover:w-full bg-indigo-500 transition-all duration-300" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>

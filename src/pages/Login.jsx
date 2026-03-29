@@ -7,6 +7,13 @@ import {
   ArrowRight, ShieldCheck, Zap, Star,
   Globe, GraduationCap
 } from 'lucide-react'
+import { auth, googleProvider } from '../lib/firebase'
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signInWithPopup,
+  onAuthStateChanged
+} from 'firebase/auth'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { MOCK_CAMPUSES, MOCK_SKILLS } from '../data/mockData'
@@ -37,56 +44,42 @@ export default function Login() {
     setIsLoading(true)
     try {
       if (isSignUp) {
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-          options: {
-            data: {
-              full_name: data.fullName,
-            }
-          }
-        })
+        // 1. Firebase Sign Up
+        const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password)
+        const user = userCredential.user
 
-        if (signUpError) throw signUpError
+        // 2. Initial Profile creation in Supabase
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.uid,
+            full_name: data.fullName,
+            campus_id: data.campus,
+            role: 'student',
+            onboarding_completed: false,
+            karma_balance: 0
+          })
 
-        if (authData.user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: authData.user.id,
-              full_name: data.fullName,
-              campus_id: data.campus,
-              role: 'student',
-              onboarding_completed: false,
-              karma_balance: 0 // New users start at 0 before onboarding completes
-            })
-
-          if (profileError) throw profileError
-          
-          toast.success('Account created! Let\'s set up your profile.')
-          navigate('/onboarding')
-        }
+        if (profileError) throw profileError
+        
+        toast.success(`Welcome to the Nexus, ${data.fullName}!`)
+        navigate('/onboarding')
       } else {
-        const { data: loginData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password
-        })
+        // 1. Firebase Sign In
+        const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password)
+        const user = userCredential.user
 
-        if (signInError) throw signInError
+        // 2. Fetch profile from Supabase
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('id', user.uid)
+          .single()
 
-        if (loginData.user) {
-          await initialize()
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('onboarding_completed')
-            .eq('id', loginData.user.id)
-            .single()
-
-          if (profile && !profile.onboarding_completed) {
-            navigate('/onboarding')
-          } else {
-            navigate(location.state?.from?.pathname || '/dashboard')
-          }
+        if (!profile || !profile.onboarding_completed) {
+          navigate('/onboarding')
+        } else {
+          navigate(location.state?.from?.pathname || '/dashboard')
         }
       }
     } catch (error) {
@@ -97,20 +90,39 @@ export default function Login() {
   }
 
   const handleGoogleLogin = async () => {
+    setIsLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-          queryParams: {
-            prompt: 'select_account'
-          }
-        }
-      })
-      if (error) throw error
-      toast.success('Redirecting to Google...')
+      const result = await signInWithPopup(auth, googleProvider)
+      const user = result.user
+
+      // Check if profile exists; if not, they need onboarding
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.uid)
+        .single()
+
+      if (!profile) {
+        // Create skeleton profile for Google users
+        await supabase.from('profiles').upsert({
+          id: user.uid,
+          full_name: user.displayName || 'EduSync Peer',
+          role: 'student',
+          onboarding_completed: false,
+          karma_balance: 0
+        })
+        navigate('/onboarding')
+      } else if (!profile.onboarding_completed) {
+        navigate('/onboarding')
+      } else {
+        navigate('/dashboard')
+      }
+      
+      toast.success(`Identity Verified: ${user.email}`)
     } catch (error) {
-      toast.error(`Authentication Error: ${error.message}`)
+      toast.error(error.message)
+    } finally {
+      setIsLoading(false)
     }
   }
 

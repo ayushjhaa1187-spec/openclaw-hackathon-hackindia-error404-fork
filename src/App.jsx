@@ -1,6 +1,6 @@
-// App.jsx — routing only, zero UI here
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
+import { useAuthStore } from './stores/authStore'
 import { Toaster } from 'sonner'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from './lib/queryClient'
@@ -29,6 +29,13 @@ const Privacy       = lazy(() => import('./pages/Privacy'))
 const Terms         = lazy(() => import('./pages/Terms'))
 
 export default function App() {
+  const { initialize } = useAuthStore()
+
+  useEffect(() => {
+    const unsub = initialize()
+    return unsub
+  }, [initialize])
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
