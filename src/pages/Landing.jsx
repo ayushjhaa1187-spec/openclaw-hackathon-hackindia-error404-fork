@@ -7,6 +7,7 @@ import {
   ArrowRight, Menu, X, CheckCircle2, AlertTriangle
 } from 'lucide-react'
 import { MOCK_SKILLS, MOCK_TESTIMONIALS } from '../data/mockData'
+import Footer from '../components/layout/Footer'
 
 // Helper component for floating chips
 const FloatingChip = ({ icon: Icon, value, label, delay }) => (
@@ -21,6 +22,8 @@ const FloatingChip = ({ icon: Icon, value, label, delay }) => (
     <span className="text-white/60 text-sm">{label}</span>
   </motion.div>
 )
+
+const StatChip = FloatingChip; // Alias to resolve potential ReferenceError
 
 export default function Landing() {
   const { scrollYProgress } = useScroll()
@@ -516,31 +519,20 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-slate-950 py-16 px-6 text-center">
-        <div className="flex flex-col items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-black text-sm">E</span>
-            </div>
-            <span className="text-white font-black text-xl tracking-tighter">EduSync</span>
+      {/* SHORTCUT LINKS SECTION */}
+      <section className="bg-slate-900 py-12 border-t border-slate-800 hidden md:block">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-wrap justify-center gap-x-16 gap-y-4">
+            <Link to="/explore" className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] hover:text-indigo-400 transition-colors">Find Mentors</Link>
+            <Link to="/vault" className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] hover:text-indigo-400 transition-colors">Study Vault</Link>
+            <Link to="/campus-charter" className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] hover:text-indigo-400 transition-colors">Nexus Protocol</Link>
+            <Link to="/honor-code" className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] hover:text-indigo-400 transition-colors">Honor Code</Link>
+            <Link to="/help" className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] hover:text-indigo-400 transition-colors">Help Center</Link>
           </div>
-          <p className="text-slate-500 max-w-md">Bridging knowledge across campuses. Empowering the next generation of Indian engineers.</p>
-          
-          <div className="flex flex-wrap justify-center gap-8 text-slate-500 text-sm font-medium mt-4">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Use</a>
-            <a href="#" className="hover:text-white transition-colors">Contact</a>
-            <a href="#" className="hover:text-white transition-colors">GitHub</a>
-          </div>
-
-          <div className="h-px w-full max-w-xl bg-slate-900 my-8" />
-          
-          <p className="text-slate-600 text-xs">
-            HackIndia 2026 Submission · Team Error404 · Built with ❤️ for Indian students
-          </p>
         </div>
-      </footer>
+      </section>
+
+      <Footer dark />
     </div>
   )
 }

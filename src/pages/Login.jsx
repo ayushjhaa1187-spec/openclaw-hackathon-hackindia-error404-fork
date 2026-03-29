@@ -101,12 +101,16 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/onboarding'
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: {
+            prompt: 'select_account'
+          }
         }
       })
       if (error) throw error
+      toast.success('Redirecting to Google...')
     } catch (error) {
-      toast.error(error.message)
+      toast.error(`Authentication Error: ${error.message}`)
     }
   }
 
@@ -259,17 +263,14 @@ export default function Login() {
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors">
                     <Mail size={20} />
                   </div>
-                  <input
-                    {...register('email', { 
-                      required: 'Email is required',
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@.*\.edu\.in$/i,
-                        message: 'Use your campus email (.edu.in)'
-                      }
-                    })}
-                    className="w-full pl-12 pr-4 py-4.5 bg-white border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
-                    placeholder="name@campus.edu.in"
-                  />
+                    <input
+                      {...register('email', { 
+                        required: 'Email is required',
+                        // Relaxed validation for hackathon testing, but we still prefer .edu.in
+                      })}
+                      className="w-full pl-12 pr-4 py-4.5 bg-white border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
+                      placeholder="name@campus.edu.in"
+                    />
                 </div>
                 {errors.email && <p className="text-rose-500 text-[10px] ml-1 font-black uppercase tracking-wider">{errors.email.message}</p>}
               </div>

@@ -22,6 +22,11 @@ const UserProfile  = lazy(() => import('./pages/UserProfile'))
 const Settings     = lazy(() => import('./pages/Settings'))
 const Notifications = lazy(() => import('./pages/Notifications'))
 const NotFound     = lazy(() => import('./pages/NotFound'))
+const CampusCharter = lazy(() => import('./pages/CampusCharter'))
+const HonorCode     = lazy(() => import('./pages/HonorCode'))
+const Help          = lazy(() => import('./pages/Help'))
+const Privacy       = lazy(() => import('./pages/Privacy'))
+const Terms         = lazy(() => import('./pages/Terms'))
 
 export default function App() {
   return (
@@ -32,6 +37,11 @@ export default function App() {
             {/* PUBLIC */}
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/campus-charter" element={<CampusCharter />} />
+            <Route path="/honor-code" element={<HonorCode />} />
+            <Route path="/help" element={<Help />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
 
             {/* ONBOARDING — auth required, no navbar */}
             <Route path="/onboarding" element={

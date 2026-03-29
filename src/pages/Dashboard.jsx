@@ -223,29 +223,27 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Community Rank Card Placeholder */}
-          <div className="bg-gradient-to-br from-white to-slate-50 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/40 border border-slate-100">
-            <h3 className="text-xl font-black text-slate-900 mb-8 font-outfit border-b border-slate-100 pb-4">Security Protocol</h3>
-            <div className="space-y-8">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-                  <ShieldCheck size={28} />
+          {/* Governance & Integrity */}
+          <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/40 border-2 border-slate-50 relative overflow-hidden group hover:border-indigo-500/30 transition-all">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-50 blur-3xl rounded-full group-hover:bg-indigo-100 transition-colors" />
+            <h3 className="text-xl font-black text-slate-900 mb-6 font-outfit uppercase tracking-tighter relative z-10">Nexus Protocol</h3>
+            <div className="space-y-4 relative z-10">
+              <Link to="/campus-charter" className="flex items-center justify-between p-4 bg-slate-50 hover:bg-indigo-600 hover:text-white rounded-2xl transition-all group/item">
+                <div className="flex items-center gap-3">
+                  <Shield size={18} className="text-indigo-500 group-hover/item:text-white" />
+                  <span className="text-sm font-bold">Campus Charter</span>
                 </div>
-                <div>
-                  <h4 className="font-black text-slate-900 text-sm uppercase mb-1">Nexus Verified</h4>
-                  <p className="text-[11px] text-slate-500 leading-relaxed font-medium">All interactions are authenticated via institutional email for academic integrity.</p>
+                <ArrowRight size={16} className="opacity-0 group-hover/item:opacity-100 -translate-x-2 group-hover/item:translate-x-0 transition-all" />
+              </Link>
+              <Link to="/honor-code" className="flex items-center justify-between p-4 bg-slate-50 hover:bg-indigo-600 hover:text-white rounded-2xl transition-all group/item">
+                <div className="flex items-center gap-3">
+                  <BookOpen size={18} className="text-indigo-500 group-hover/item:text-white" />
+                  <span className="text-sm font-bold">Honor Code</span>
                 </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-                  <TrendingUp size={28} />
-                </div>
-                <div>
-                  <h4 className="font-black text-slate-900 text-sm uppercase mb-1">Audit Quality</h4>
-                  <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Maintain a high rating for better visibility across the {profile?.campus_id || 'campus'}.</p>
-                </div>
-              </div>
+                <ArrowRight size={16} className="opacity-0 group-hover/item:opacity-100 -translate-x-2 group-hover/item:translate-x-0 transition-all" />
+              </Link>
             </div>
+            <p className="mt-6 text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] text-center">Academic Integrity First</p>
           </div>
         </div>
       </div>

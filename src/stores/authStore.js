@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { toast } from 'sonner'
 
 export const useAuthStore = create((set) => ({
   user: null,
@@ -9,6 +10,13 @@ export const useAuthStore = create((set) => ({
   initialize: async () => {
     const { data: { session } } = await supabase.auth.getSession()
     if (session?.user) {
+      if (!session.user.email.endsWith('.edu.in')) {
+        await supabase.auth.signOut()
+        set({ user: null, profile: null, loading: false })
+        toast.error('Access Denied: Please use your institutional email ending in .edu.in.')
+        return
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -22,6 +30,13 @@ export const useAuthStore = create((set) => ({
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        if (!session.user.email.endsWith('.edu.in')) {
+          await supabase.auth.signOut()
+          set({ user: null, profile: null })
+          toast.error('Switching Node: Use your .edu.in campus email to continue.')
+          return
+        }
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
