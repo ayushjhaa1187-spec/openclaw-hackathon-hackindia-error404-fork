@@ -28,6 +28,7 @@ const HonorCode     = lazy(() => import('./pages/HonorCode'))
 const Help          = lazy(() => import('./pages/Help'))
 const Privacy       = lazy(() => import('./pages/Privacy'))
 const Terms         = lazy(() => import('./pages/Terms'))
+const ListSkill     = lazy(() => import('./pages/ListSkill'))
 
 export default function App() {
   const { initialize } = useAuthStore()
@@ -67,6 +68,7 @@ export default function App() {
               <Route path="/dashboard"             element={<Dashboard />} />
               <Route path="/explore"               element={<Explore />} />
               <Route path="/explore/skill/:skillId" element={<SkillDetail />} />
+              <Route path="/list-skill"             element={<ListSkill />} />
               <Route path="/vault"                 element={<Vault />} />
               <Route path="/chat"                  element={<Chat />} />
               <Route path="/chat/:conversationId"  element={<Chat />} />

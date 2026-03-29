@@ -10,6 +10,8 @@ import {
 import { useAuthStore } from '../stores/authStore'
 import { MOCK_SKILLS, MOCK_RESOURCES } from '../data/mockData'
 import { getRecommendations } from '../lib/gemini'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../lib/supabase'
 import Button from '../components/ui/Button'
 import Avatar from '../components/ui/Avatar'
 import Spinner from '../components/ui/Spinner'
@@ -135,18 +137,41 @@ const AIRecommendations = ({ profile }) => {
 export default function Dashboard() {
   const { profile } = useAuthStore()
   
-  // Phase 2 Rule: For new users, activity stats are 0.
-  // We determine "new user" if they have 0 swaps or no specific activity data.
+  // Real stats fetching
+  const { data: swapCount = 0 } = useQuery({
+    queryKey: ['active-swaps', profile?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('skill_requests')
+        .select('*', { count: 'exact', head: true })
+        .or(`requester_id.eq.${profile.id},status.eq.pending`)
+      return count || 0
+    },
+    enabled: !!profile?.id
+  })
+
+  const { data: resourceCount = 0 } = useQuery({
+    queryKey: ['user-resources', profile?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('resources')
+        .select('*', { count: 'exact', head: true })
+        .eq('uploader_id', profile.id)
+      return count || 0
+    },
+    enabled: !!profile?.id
+  })
+
   const stats = {
-    activeSwaps: 0,
+    activeSwaps: swapCount,
     karmaBalance: profile?.karma_balance || 0,
-    resources: 0,
-    networkRank: 0
+    resources: resourceCount,
+    networkRank: Math.max(1, 400 - Math.floor((profile?.karma_balance || 0) / 10)) 
   }
 
   const checklist = [
     { label: 'Complete Onboarding', completed: profile?.onboarding_completed, path: '/onboarding' },
-    { label: 'List your first skill', completed: !!profile?.teaching_skills?.length, path: '/profile' },
+    { label: 'List your first skill', completed: !!profile?.teaching_skills?.length, path: '/list-skill' },
     { label: 'Explore the Vault', completed: false, path: '/vault' },
     { label: 'Send a wave (Message)', completed: false, path: '/explore' },
   ]
@@ -189,7 +214,9 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-4">
             <Button variant="outline" icon={Search} className="rounded-2xl px-6 py-4">Global Search</Button>
-            <Button variant="primary" icon={Rocket} className="rounded-2xl px-6 py-4 shadow-xl shadow-indigo-600/20">New Skill Hub</Button>
+            <Link to="/list-skill">
+              <Button variant="primary" icon={Rocket} className="rounded-2xl px-6 py-4 shadow-xl shadow-indigo-600/20 w-full">New Skill Hub</Button>
+            </Link>
           </div>
         </div>
       </motion.div>

@@ -9,34 +9,41 @@ import { useAuthStore } from '../../stores/authStore'
 const SUBJECTS = ['Data Structures', 'Algorithms', 'VLSI Design', 'Digital Logic', 'Marketing Strategy', 'UX Design', 'Thermodynamics', 'Machine Learning']
 const TYPES = ['PDF', 'Doc', 'Video', 'Link']
 
+import { vaultService } from '../../services/vaultService'
+
 export default function UploadResourceModal({ onClose, onSuccess }) {
   const [step, setStep] = useState(1)
   const { profile } = useAuthStore()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { register, handleSubmit, formState: { errors } } = useForm()
 
   const nextStep = () => setStep(s => s + 1)
   const prevStep = () => setStep(s => s - 1)
 
   const onSubmit = async (data) => {
+    setIsSubmitting(true)
     try {
       const newResource = {
-        ...data,
+        title: data.title,
+        subject: data.subject,
+        type: data.type,
+        karma_cost: parseInt(data.karma_cost),
         uploader_id: profile.id,
         campus_id: profile.campus_id,
-        status: 'pending', // Admins verify before release
+        status: 'pending',
         is_verified: false,
-        download_count: 0,
-        url: 'https://example.com/demo.pdf' // Static for demo
+        url: 'https://cdn.edusync.nexus/placeholders/academic-vault.pdf'
       }
 
-      // Simulation: In real app, call vaultService.uploadResource()
-      console.log('Resource uploaded:', newResource)
+      await vaultService.uploadResource(newResource)
       
       toast.success('Resource submitted for certification! 📄')
       onSuccess?.()
       onClose()
     } catch (err) {
       toast.error(err.message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -186,7 +193,7 @@ export default function UploadResourceModal({ onClose, onSuccess }) {
                 <ArrowRight className="ml-2" />
               </Button>
             ) : (
-              <Button type="submit" className="flex-1" variant="primary">
+              <Button type="submit" className="flex-1" variant="primary" loading={isSubmitting}>
                 Submit File
                 <Rocket className="ml-2" />
               </Button>

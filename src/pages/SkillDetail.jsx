@@ -7,7 +7,8 @@ import {
   Share2, AlertTriangle, PlayCircle, BookOpen,
   Calendar, Layers, Users, Rocket
 } from 'lucide-react'
-import { MOCK_SKILLS } from '../data/mockData'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../lib/supabase'
 import Button from '../components/ui/Button'
 import Avatar from '../components/ui/Avatar'
 import SwapRequestModal from '../components/shared/SwapRequestModal'
@@ -18,8 +19,57 @@ export default function SkillDetail() {
   const navigate = useNavigate()
   const [showSwapModal, setShowSwapModal] = useState(false)
   
-  const skill = useMemo(() => MOCK_SKILLS.find(s => s.id === skillId) || MOCK_SKILLS[0], [skillId])
+  const { data: skill, isLoading, error } = useQuery({
+    queryKey: ['skill', skillId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('skills')
+        .select(`
+          *,
+          profile:mentor_id (
+            full_name, 
+            avatar_url, 
+            campus_id, 
+            role,
+            campuses:campus_id (name, short_code)
+          )
+        `)
+        .eq('id', skillId)
+        .single()
+      
+      if (error) throw error
+      
+      return {
+        ...data,
+        mentor: data.profile?.full_name || 'EduSync Peer',
+        campus: data.profile?.campuses?.name || 'Partner Campus',
+        mentor_avatar: data.profile?.avatar_url
+      }
+    },
+    enabled: !!skillId
+  })
+
   const activeSinceDate = useMemo(() => new Date(2025, 0, 15).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), [])
+
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">Syncing with Nexus Data Node...</p>
+      </div>
+    </div>
+  )
+
+  if (error || !skill) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="text-center">
+        <AlertTriangle size={48} className="mx-auto text-rose-500 mb-6" />
+        <h2 className="text-3xl font-black text-slate-900 mb-2 font-outfit uppercase tracking-tighter">Skill Not Found</h2>
+        <p className="text-slate-500 mb-8 font-medium">The skill protocol you are trying to access is no longer active.</p>
+        <Button onClick={() => navigate('/explore')}>Return to Explore</Button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="bg-slate-50 min-h-screen">
