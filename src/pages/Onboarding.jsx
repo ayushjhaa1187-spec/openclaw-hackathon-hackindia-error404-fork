@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -112,7 +113,9 @@ export default function Onboarding() {
     } catch (err) {
       toast.error(err.message)
       setIsSubmitting(false)
+    }
   }
+
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background Glow */}
@@ -410,4 +413,3 @@ export default function Onboarding() {
     </div>
   )
     }
-  }
