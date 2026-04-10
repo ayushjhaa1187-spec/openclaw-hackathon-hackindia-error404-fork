@@ -78,8 +78,9 @@ export default function Onboarding() {
 
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
           full_name: data.fullName,
+                    id: user.uid,
           department: data.department,
           year_of_study: parseInt(data.yearOfStudy),
           bio: data.bio,
