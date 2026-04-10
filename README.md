@@ -18,7 +18,7 @@ EduSync is that infrastructure.
 
 ## Live Demo
 
-**Deployed:** [edusync.vercel.app](https://openclaw-hackathon-hackindia-error4-six.vercel.app)  
+**Deployed:** [edusync.vercel.app](https://openclaw-hackathon-hackindia-error4-rosy.vercel.app/)  
 **Design Doc:** [DESIGN_DOC.md](./DESIGN_DOC.md)
 
 ---
