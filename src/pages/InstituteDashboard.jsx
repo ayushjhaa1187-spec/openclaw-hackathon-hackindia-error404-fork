@@ -4,8 +4,7 @@ import {
   Building2, Users, TrendingUp, Award, BookOpen, Zap,
   Calendar, Globe, Shield, BarChart3, Download, Settings,
   AlertCircle, CheckCircle, Clock, ArrowUpRight, ArrowDownRight,
-  Activity, Target, Brain, GraduationCap
-} from 'lucide-react'
+    Activity, Target, GraduationCap} from 'lucide-react'
 import Button from '../components/ui/Button'
 
 const CAMPUS_METRICS = {
