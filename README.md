@@ -785,23 +785,6 @@ npm run dev
 | **Password** | `edusync2026` |
 | **Role** | Full access (Student + Admin view) |
 
----
-
-## 🔐 Environment Variables
-
-Create `.env.local` in the project root:
-
-```env
-# Supabase
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Optional: App config
-VITE_APP_NAME=EduSync
-VITE_APP_URL=https://openclaw-hackathon-hackindia-error4-rosy.vercel.app
-```
-
-> ⚠️ Never commit `.env.local` to version control. The `.env.example` file serves as a safe reference template.
 
 ---
 
