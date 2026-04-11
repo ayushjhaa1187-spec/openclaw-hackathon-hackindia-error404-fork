@@ -575,7 +575,7 @@ export default function Landing() {
       </section>
 
       <Footer dark />
-    </div>
+    
     
         {/* Institute Portal CTA */}
         <section className="py-24 px-6 bg-gradient-to-br from-indigo-950 via-slate-950 to-purple-950 relative overflow-hidden">
@@ -625,5 +625,6 @@ export default function Landing() {
             </div>
           </div>
         </section>
-  )
+      </div>
+      )
 }
