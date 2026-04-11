@@ -17,7 +17,8 @@ import {
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { MOCK_CAMPUSES, MOCK_SKILLS } from '../data/mockData'
-import { toast } from 'sonner'
+import { toast } from 'sonner
+  import { firebaseUidToUuid } from '../utils/uuidHelpers''
 import Button from '../components/ui/Button'
 
 export default function Login() {
@@ -52,7 +53,7 @@ export default function Login() {
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
-            id: user.uid,
+            id: firebaseUidToUuid(user.uid),
             full_name: data.fullName,
             campus_id: data.campus,
             role: 'student',
@@ -72,7 +73,7 @@ export default function Login() {
         const { data: profile } = await supabase
           .from('profiles')
           .select('onboarding_completed')
-          .eq('id', user.uid)
+          .eq('id', firebaseUidToUuid(user.uid))
           .single()
 
         if (!profile || !profile.onboarding_completed) {
@@ -98,13 +99,13 @@ export default function Login() {
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.uid)
+        .eq('id', firebaseUidToUuid(user.uid))
         .single()
 
       if (!profile) {
         // Create skeleton profile for Google users
         await supabase.from('profiles').upsert({
-          id: user.uid,
+          id: firebaseUidToUuid(user.uid),
           full_name: user.displayName || 'EduSync Peer',
           role: 'student',
           onboarding_completed: false,
