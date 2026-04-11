@@ -1,3 +1,4 @@
+
 <!--
   EDUSYNC — HACKINDIA 2026
   Inter-campus Peer-to-Peer Skill Exchange Platform
@@ -19,7 +20,7 @@
 
 [![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![TypeScript](https://img.shields.io/badge/Tailwind%20CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind%20CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%2B%20Auth%20%2B%20Realtime-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Framer](https://img.shields.io/badge/Framer%20Motion-v11-EF0070?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion/)
 [![Zustand](https://img.shields.io/badge/Zustand-State%20Management-FF8C00?style=for-the-badge)](https://zustand-demo.pmnd.rs/)
@@ -43,15 +44,19 @@
 - [What is EduSync?](#-what-is-edusync)
 - [The Problem](#-the-problem)
 - [Core Features](#-core-features)
-- [Platform Workflow](#-platform-workflow)
+- [System Architecture](#-system-architecture)
+- [Data Flow Diagrams](#-data-flow-diagrams)
 - [Karma Economy](#-karma-economy)
 - [Nexus Mode](#-nexus-mode)
 - [Admin Moderation](#-admin-moderation-flow)
 - [Tech Stack](#-tech-stack)
 - [Database Schema](#-database-schema)
+- [API Reference](#-api-reference)
 - [Project Structure](#-project-structure)
 - [Navigation Logic](#-navigation-logic)
 - [Quick Start](#-quick-start)
+- [Environment Variables](#-environment-variables)
+- [Deployment](#-deployment)
 - [Partner Campus Network](#-partner-campus-network)
 - [Contributing](#-contributing)
 - [Team](#-team)
@@ -131,7 +136,154 @@ Indian engineering campuses are knowledge silos. A student struggling with VLSI 
 
 ---
 
-## 🔄 Platform Workflow
+## 🏗️ System Architecture
+
+### High-Level Architecture
+
+```mermaid
+graph TB
+    subgraph CLIENT["🖥️ Client Layer — React 18 + Vite 5"]
+        LP[Landing Page]
+        EX[Explore Skills]
+        VT[Knowledge Vault]
+        CH[Chat / Nexus Bridge]
+        DB[Dashboard]
+        PR[Profile & Settings]
+        AP[Admin Panel]
+    end
+
+    subgraph STATE["⚙️ State & Data Layer"]
+        ZS[Zustand Store]
+        RQ[TanStack React Query]
+        RHF[React Hook Form]
+    end
+
+    subgraph BACKEND["☁️ Supabase Backend"]
+        SB[(PostgreSQL 15\nRow-Level Security)]
+        AUTH[Supabase Auth\nJWT + Institutional Email]
+        RT[Supabase Realtime\nWebSocket Subscriptions]
+        RPC[Supabase RPC\nAtomic Karma Transactions]
+        STORE[Supabase Storage\nVault File Uploads]
+    end
+
+    CLIENT -->|Query + Mutation| RQ
+    RQ -->|REST / Realtime| SB
+    RQ -->|Auth calls| AUTH
+    CH -->|WebSocket| RT
+    STATE -->|Global UI State| ZS
+    RPC -->|Atomic Karma Ops| SB
+    VT -->|File upload| STORE
+
+    style CLIENT fill:#1e1b4b,stroke:#6366f1,color:#e0e7ff
+    style STATE fill:#172554,stroke:#3b82f6,color:#e0e7ff
+    style BACKEND fill:#052e16,stroke:#22c55e,color:#dcfce7
+```
+
+### Component Interaction Map
+
+```mermaid
+graph LR
+    subgraph AUTH["🔐 Auth Flow"]
+        IE[Institutional Email] --> SUP_AUTH[Supabase Auth]
+        SUP_AUTH --> JWT[JWT Session]
+    end
+
+    subgraph CORE["📦 Core Modules"]
+        JWT --> SKILLS[Skill Module]
+        JWT --> VAULT[Vault Module]
+        JWT --> CHAT[Chat Module]
+        JWT --> KARMA[Karma Module]
+    end
+
+    subgraph DB["🗄️ Data Layer"]
+        SKILLS --> PG[(PostgreSQL)]
+        VAULT --> PG
+        CHAT --> PG
+        KARMA --> PG
+        PG --> RT[Realtime\nSubscriptions]
+        RT --> CHAT
+    end
+
+    style AUTH fill:#2d1b69,stroke:#7c3aed,color:#ede9fe
+    style CORE fill:#1e3a5f,stroke:#2563eb,color:#dbeafe
+    style DB fill:#3b1515,stroke:#dc2626,color:#fee2e2
+```
+
+---
+
+## 🔄 Data Flow Diagrams
+
+### Flow 1 — Skill Swap Request
+
+```mermaid
+sequenceDiagram
+    actor Student
+    participant UI as React UI
+    participant SB as Supabase RPC
+    participant DB as PostgreSQL
+    participant CHAT as Realtime Chat
+
+    Student->>UI: Browse skills (local or Nexus Mode)
+    UI->>DB: SELECT skills WHERE campus = user_campus
+    DB-->>UI: Skill listings
+    Student->>UI: Click skill → 4-step swap modal
+    UI->>UI: Validate Karma balance (client-side)
+    Student->>UI: Confirm swap request
+    UI->>SB: CALL submit_swap_request(requester, skill, karma_cost)
+
+    activate SB
+    SB->>DB: CHECK karma_balance >= cost
+    SB->>DB: DEDUCT karma from requester
+    SB->>DB: LOG to karma_ledger
+    SB->>DB: INSERT into skill_requests
+    SB-->>UI: swap_request_id
+    deactivate SB
+
+    DB-->>UI: Mentor receives notification
+    alt Mentor Accepts
+        UI->>SB: CALL accept_swap(request_id)
+        SB->>DB: Transfer Karma to mentor
+        SB->>DB: CREATE conversation (Nexus Bridge if cross-campus)
+        DB-->>CHAT: Realtime subscription fires
+        CHAT-->>Student: Chat created & accessible
+    else Mentor Rejects
+        UI->>SB: CALL reject_swap(request_id)
+        SB->>DB: REFUND karma to requester
+        DB-->>UI: Requester notified
+    end
+```
+
+### Flow 2 — Knowledge Vault Upload & Unlock
+
+```mermaid
+sequenceDiagram
+    actor Uploader
+    actor Learner
+    participant UI as React UI
+    participant STORE as Supabase Storage
+    participant DB as PostgreSQL
+    participant ADMIN as Admin Dashboard
+
+    Uploader->>UI: Upload PDF/doc to Vault
+    UI->>STORE: Upload file → get public URL
+    STORE-->>UI: File URL
+    UI->>DB: INSERT resource (status: pending_review)
+
+    DB-->>ADMIN: Resource appears in moderation queue
+    ADMIN->>DB: Approve resource
+    DB-->>UI: Resource goes live
+
+    Learner->>UI: Browse Knowledge Vault
+    DB-->>UI: Resource listings
+    Learner->>UI: Click "Unlock" on resource
+    UI->>DB: CALL unlock_resource(learner_id, resource_id, karma_cost)
+    DB->>DB: Deduct Karma from Learner
+    DB->>DB: Credit Karma to Uploader
+    DB->>DB: INSERT into resource_unlocks
+    DB-->>UI: Resource URL accessible to Learner
+```
+
+### Flow 3 — Platform Full Workflow
 
 ```mermaid
 flowchart TD
@@ -173,8 +325,6 @@ flowchart TD
     style H fill:#F59E0B,color:#000,stroke:none
     style N fill:#F59E0B,color:#000,stroke:none
     style R fill:#F59E0B,color:#000,stroke:none
-    style C fill:#10B981,color:#fff,stroke:none
-    style E fill:#10B981,color:#fff,stroke:none
     style O fill:#10B981,color:#fff,stroke:none
     style S fill:#10B981,color:#fff,stroke:none
     style V fill:#10B981,color:#fff,stroke:none
@@ -325,26 +475,120 @@ flowchart TD
 
 ## 🗄️ Database Schema
 
-### Entity Overview
+### Entity Relationship Overview
 
+```mermaid
+erDiagram
+    CAMPUSES {
+        uuid id PK
+        text name
+        text short_code
+        timestamp created_at
+    }
+
+    PROFILES {
+        uuid id PK
+        uuid campus_id FK
+        text full_name
+        text avatar_url
+        text role
+        int karma_balance
+        boolean onboarding_complete
+        timestamp created_at
+    }
+
+    SKILLS {
+        uuid id PK
+        uuid user_id FK
+        text title
+        text description
+        int karma_cost
+        text status
+        timestamp created_at
+    }
+
+    SKILL_REQUESTS {
+        uuid id PK
+        uuid requester_id FK
+        uuid skill_id FK
+        int karma_escrowed
+        text status
+        timestamp created_at
+    }
+
+    SKILL_REVIEWS {
+        uuid id PK
+        uuid request_id FK
+        uuid reviewer_id FK
+        int rating
+        text comment
+        timestamp created_at
+    }
+
+    RESOURCES {
+        uuid id PK
+        uuid uploader_id FK
+        text title
+        text file_url
+        int karma_cost
+        text status
+        timestamp created_at
+    }
+
+    KARMA_LEDGER {
+        uuid id PK
+        uuid user_id FK
+        int delta
+        text action
+        uuid reference_id
+        timestamp created_at
+    }
+
+    CONVERSATIONS {
+        uuid id PK
+        boolean is_nexus_bridge
+        timestamp created_at
+    }
+
+    MESSAGES {
+        uuid id PK
+        uuid conversation_id FK
+        uuid sender_id FK
+        text content
+        timestamp created_at
+    }
+
+    NOTIFICATIONS {
+        uuid id PK
+        uuid user_id FK
+        text type
+        text payload
+        boolean is_read
+        timestamp created_at
+    }
+
+    REPORTS {
+        uuid id PK
+        uuid reporter_id FK
+        text target_type
+        uuid target_id
+        text reason
+        text status
+        timestamp created_at
+    }
+
+    PROFILES ||--o{ SKILLS : "lists"
+    PROFILES ||--o{ SKILL_REQUESTS : "makes"
+    SKILLS ||--o{ SKILL_REQUESTS : "receives"
+    SKILL_REQUESTS ||--o| SKILL_REVIEWS : "earns"
+    PROFILES ||--o{ RESOURCES : "uploads"
+    PROFILES ||--o{ KARMA_LEDGER : "logs"
+    CONVERSATIONS ||--o{ MESSAGES : "contains"
+    PROFILES ||--o{ NOTIFICATIONS : "receives"
+    CAMPUSES ||--o{ PROFILES : "has"
 ```
-campuses          — partner institution registry
-profiles          — extends auth.users with campus, role, karma_balance
-skills            — skill listings created by mentors
-skill_requests    — swap requests between students
-skill_reviews     — post-session ratings and comments
-resources         — uploaded PDFs, docs, links in the Knowledge Vault
-resource_unlocks  — tracks which user unlocked which resource
-karma_ledger      — full immutable transaction log of all karma movements
-conversations     — chat threads (supports Nexus Bridge flag)
-messages          — real-time messages within conversations
-notifications     — in-app notification feed per user
-reports           — content and user reports for moderation queue
-```
 
-All tables have **Row Level Security (RLS)** enabled. Karma transactions are atomic via Supabase RPC functions — no client-side race conditions.
-
-### Key SQL: Karma RPC Function
+### Key SQL: Atomic Karma RPC
 
 ```sql
 -- Atomic karma deduction on swap request submission
@@ -410,6 +654,63 @@ CREATE POLICY "Message visibility"
 
 ---
 
+## 📡 API Reference
+
+> All data operations go through Supabase client SDK. The following documents the logical API surface of the platform.
+
+### Skills
+
+| Method | Operation | Auth | Description |
+|---|---|---|---|
+| `SELECT` | `skills` | Public | List all approved skills (filterable by campus / Nexus) |
+| `INSERT` | `skills` | 🔐 Required | Create a new skill listing |
+| `UPDATE` | `skills` | 🔐 Owner | Update title, description, or Karma cost |
+| `DELETE` | `skills` | 🔐 Owner / Admin | Remove skill listing |
+
+### Skill Requests
+
+| Method | Operation | Auth | Description |
+|---|---|---|---|
+| `RPC` | `submit_swap_request` | 🔐 Required | Atomic swap submission — deducts Karma |
+| `RPC` | `accept_swap` | 🔐 Mentor | Accept swap — transfers Karma, creates conversation |
+| `RPC` | `reject_swap` | 🔐 Mentor | Reject swap — refunds Karma to requester |
+
+### Knowledge Vault
+
+| Method | Operation | Auth | Description |
+|---|---|---|---|
+| `SELECT` | `resources` | Public | Browse approved resources |
+| `INSERT` | `resources` | 🔐 Required | Upload a new resource (enters moderation) |
+| `RPC` | `unlock_resource` | 🔐 Required | Spend Karma to unlock a resource |
+
+### Admin
+
+| Method | Operation | Auth | Description |
+|---|---|---|---|
+| `UPDATE` | `resources.status` | 🔐 Admin | Approve or reject a Vault resource |
+| `UPDATE` | `profiles.role` | 🔐 Admin | Warn or ban a user account |
+| `SELECT` | `reports` | 🔐 Admin | View moderation queue |
+
+### Example: Submit Swap Request
+
+```ts
+// Atomic swap via Supabase RPC
+const { data, error } = await supabase.rpc('submit_swap_request', {
+  p_requester_id: user.id,
+  p_skill_id: skill.id,
+  p_karma_cost: skill.karma_cost
+});
+
+if (error) {
+  // Handles "Insufficient Karma balance" gracefully
+  toast.error(error.message);
+} else {
+  toast.success('Swap request submitted! Waiting for mentor response.');
+}
+```
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -465,17 +766,8 @@ npm install
 
 # 3. Configure environment
 cp .env.example .env.local
-# → Fill in your Supabase credentials
-```
+# → Fill in your Supabase credentials (see below)
 
-Create `.env.local` in the project root:
-
-```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-```bash
 # 4. Run the SQL schema
 # → Open DESIGN_DOC.md, copy the full SQL block,
 #   and run it in your Supabase SQL Editor
@@ -495,7 +787,27 @@ npm run dev
 
 ---
 
-## 🌍 Deploy to Vercel
+## 🔐 Environment Variables
+
+Create `.env.local` in the project root:
+
+```env
+# Supabase
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Optional: App config
+VITE_APP_NAME=EduSync
+VITE_APP_URL=https://openclaw-hackathon-hackindia-error4-rosy.vercel.app
+```
+
+> ⚠️ Never commit `.env.local` to version control. The `.env.example` file serves as a safe reference template.
+
+---
+
+## 🌍 Deployment
+
+### Deploy to Vercel (Recommended)
 
 ```bash
 # Install Vercel CLI
@@ -506,6 +818,27 @@ vercel --prod
 
 # Set environment variables in Vercel Dashboard:
 # Settings → Environment Variables → Add VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+```
+
+### Supabase Production Checklist
+
+```sql
+-- 1. Enable Row Level Security on all tables
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE karma_ledger ENABLE ROW LEVEL SECURITY;
+
+-- 2. Create production indexes
+CREATE INDEX idx_skills_campus ON skills(campus_id);
+CREATE INDEX idx_skills_created ON skills(created_at DESC);
+CREATE INDEX idx_karma_ledger_user ON karma_ledger(user_id, created_at DESC);
+CREATE INDEX idx_messages_conversation ON messages(conversation_id, created_at ASC);
+
+-- 3. Enable Realtime for chat tables
+-- In Supabase Dashboard → Database → Replication → Add: messages, notifications
 ```
 
 ---
@@ -562,9 +895,9 @@ git push origin feature/your-feature-name
 
 | Member | Role |
 |---|---|
-| **Ayush Kumar Jha** | Full-Stack Lead, Supabase Architecture, Karma Engine |
+| **Ayush Kumar Jha** | Full-Stack Lead · Supabase Architecture · Karma Engine · UI/UX |
 
-Built with vision for **HackIndia 2026** · Team Error404
+Built with ❤️ for **HackIndia 2026** · Team Error404
 
 </div>
 
@@ -573,7 +906,7 @@ Built with vision for **HackIndia 2026** · Team Error404
 ## 📄 License
 
 ```
-MIT License — Copyright (c) 2026 Ayush Kumar Jha & Team Error404
+MIT License — Copyright (c) 2026 Ayush Kumar Jha · Team Error404
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software to use, copy, modify, merge, and distribute it freely.
 ```
@@ -589,4 +922,3 @@ of this software to use, copy, modify, merge, and distribute it freely.
 ⭐ Star this repo if it helped you &nbsp;•&nbsp; 🍴 Fork it &nbsp;•&nbsp; 🐛 [Report Issues](https://github.com/ayushjhaa1187-spec/openclaw-hackathon-hackindia-error404/issues)
 
 </div>
-````
