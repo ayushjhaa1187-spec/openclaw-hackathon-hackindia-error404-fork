@@ -17,8 +17,8 @@ import {
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { MOCK_CAMPUSES, MOCK_SKILLS } from '../data/mockData'
-import { toast } from 'sonner
-  import { firebaseUidToUuid } from '../utils/uuidHelpers''
+import { toast } from 'sonner'
+  import { firebaseUidToUuid } from '../utils/uuidHelpers'
 import Button from '../components/ui/Button'
 
 export default function Login() {
