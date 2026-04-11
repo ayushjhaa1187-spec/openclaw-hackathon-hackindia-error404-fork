@@ -12,14 +12,19 @@ import Button from '../ui/Button'
 import Avatar from '../ui/Avatar'
 
 export default function NexusAI() {
+  const { profile } = useAuthStore()
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const [chat, setChat] = useState([
-    { role: 'ai', content: "Identity Verified. I am Nexus AI — your institutional guide. How can I facilitate your knowledge exchange today?" }
+    { 
+      role: 'ai', 
+      content: profile 
+        ? `Identity Verified: ${profile.full_name} (${profile.campus_id}). I am Nexus AI — your institutional guide. How can I facilitate your knowledge exchange today?`
+        : "Neural link detected. I am Nexus AI — your institutional guide. Please identify yourself to access the full knowledge federation."
+    }
   ])
   const [isLoading, setIsLoading] = useState(false)
   const scrollRef = useRef(null)
-  const { profile } = useAuthStore()
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' })

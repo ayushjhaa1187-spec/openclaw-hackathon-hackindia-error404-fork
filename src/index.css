@@ -8,17 +8,23 @@
 }
 
 :root {
-  --bg-navy: #0f172a;
-  --bg-cream: #fdf6ec;
+  --bg-navy: #020617;
+  --bg-cyber-cyan: #22d3ee;
+  --bg-neon-blue: #3b82f6;
+  --bg-dark-surface: #0f172a;
 }
 
 html, body {
-  @apply antialiased text-slate-900 bg-slate-50 selection:bg-indigo-100 selection:text-indigo-900;
+  @apply antialiased text-slate-100 bg-[#020617] selection:bg-cyan-500/30 selection:text-cyan-200;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(34, 211, 238, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
 }
 
 h1, h2, h3, h4, .font-outfit {
   font-family: var(--font-outfit);
+  @apply tracking-tight;
 }
 
 .font-caveat {

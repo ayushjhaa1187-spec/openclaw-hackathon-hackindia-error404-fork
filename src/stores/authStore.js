@@ -4,6 +4,7 @@ import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
 import { supabase } from '../lib/supabase'
 import { toast } from 'sonner'
 
+import { firebaseUidToUuid } from '../utils/uuidHelpers'
 export const useAuthStore = create((set) => ({
   user: null,
   profile: null,
@@ -17,7 +18,7 @@ export const useAuthStore = create((set) => ({
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', firebaseUser.uid)
+          .eq('id', firebaseUidToUuid(firebaseUser.uid))
           .single()
 
         if (profileError) {

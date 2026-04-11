@@ -60,8 +60,7 @@ export default function Login() {
             karma_balance: 0
           })
 
-        if (profileError) throw profileError
-        
+                if (profileError) console.warn('Profile creation failed:', profileError.message)
         toast.success(`Welcome to the Nexus, ${data.fullName}!`)
         navigate('/onboarding')
       } else {
@@ -262,7 +261,7 @@ export default function Login() {
                     </div>
                     <input
                       {...register('fullName', { required: 'Name is required' })}
-                      className="w-full pl-12 pr-4 py-4.5 bg-white border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
+                      className="w-full pl-12 pr-4 py-4.5 bg-white border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-900"
                       placeholder="Arjun Sharma"
                     />
                   </div>
@@ -281,7 +280,7 @@ export default function Login() {
                         required: 'Email is required',
                         // Relaxed validation for hackathon testing, but we still prefer .edu.in
                       })}
-                      className="w-full pl-12 pr-4 py-4.5 bg-white border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
+                      className="w-full pl-12 pr-4 py-4.5 bg-white border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-900"
                       placeholder="name@campus.edu.in"
                     />
                 </div>
@@ -297,7 +296,7 @@ export default function Login() {
                     </div>
                     <select
                       {...register('campus', { required: 'Select your campus' })}
-                      className="w-full pl-12 pr-10 py-4.5 bg-white border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 appearance-none outline-none font-medium cursor-pointer"
+                      className="w-full pl-12 pr-10 py-4.5 bg-white border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 appearance-none outline-none font-medium cursor-pointer text-slate-900"
                     >
                       <option value="">Pick your institution...</option>
                       {MOCK_CAMPUSES.map(c => (
@@ -326,7 +325,7 @@ export default function Login() {
                       required: 'Password is required',
                       minLength: { value: 8, message: 'Min 8 characters' }
                     })}
-                    className="w-full pl-12 pr-12 py-4.5 bg-white border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium"
+                    className="w-full pl-12 pr-12 py-4.5 bg-white border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-900"
                     placeholder="••••••••"
                   />
                   <button
