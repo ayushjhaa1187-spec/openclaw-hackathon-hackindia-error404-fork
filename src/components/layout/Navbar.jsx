@@ -1,7 +1,9 @@
+import { Link, useNavigate } from 'react-router-dom'
 import { Bell, Search, MessageSquare, LogOut, User, LayoutDashboard, Compass, BookOpen, Shield, Settings, HelpCircle, ChevronDown } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import Button from '../ui/Button'
 import { useState } from 'react'
+import { useAuthStore } from '../../stores/authStore'
 
 export default function Navbar() {
   const { profile, signOut } = useAuthStore()
