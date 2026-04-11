@@ -9,26 +9,28 @@ import RootLayout from './components/layout/RootLayout'
 import AdminLayout from './components/layout/AdminLayout'
 import Spinner from './components/ui/Spinner'
 
-const Landing      = lazy(() => import('./pages/Landing'))
-const Login        = lazy(() => import('./pages/Login'))
-const Onboarding   = lazy(() => import('./pages/Onboarding'))
-const Dashboard    = lazy(() => import('./pages/Dashboard'))
-const Explore      = lazy(() => import('./pages/Explore'))
-const SkillDetail  = lazy(() => import('./pages/SkillDetail'))
-const Vault        = lazy(() => import('./pages/Vault'))
-const Chat         = lazy(() => import('./pages/Chat'))
-const Admin        = lazy(() => import('./pages/Admin'))
-const Profile      = lazy(() => import('./pages/Profile'))
-const UserProfile  = lazy(() => import('./pages/UserProfile'))
-const Settings     = lazy(() => import('./pages/Settings'))
+const Landing = lazy(() => import('./pages/Landing'))
+const Login = lazy(() => import('./pages/Login'))
+const Onboarding = lazy(() => import('./pages/Onboarding'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Explore = lazy(() => import('./pages/Explore'))
+const SkillDetail = lazy(() => import('./pages/SkillDetail'))
+const Vault = lazy(() => import('./pages/Vault'))
+const Chat = lazy(() => import('./pages/Chat'))
+const Admin = lazy(() => import('./pages/Admin'))
+const InstituteDashboard = lazy(() => import('./pages/InstituteDashboard'))
+const InstituteOnboarding = lazy(() => import('./pages/InstituteOnboarding'))
+const Profile = lazy(() => import('./pages/Profile'))
+const UserProfile = lazy(() => import('./pages/UserProfile'))
+const Settings = lazy(() => import('./pages/Settings'))
 const Notifications = lazy(() => import('./pages/Notifications'))
-const NotFound     = lazy(() => import('./pages/NotFound'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 const CampusCharter = lazy(() => import('./pages/CampusCharter'))
-const HonorCode     = lazy(() => import('./pages/HonorCode'))
-const Help          = lazy(() => import('./pages/Help'))
-const Privacy       = lazy(() => import('./pages/Privacy'))
-const Terms         = lazy(() => import('./pages/Terms'))
-const ListSkill     = lazy(() => import('./pages/ListSkill'))
+const HonorCode = lazy(() => import('./pages/HonorCode'))
+const Help = lazy(() => import('./pages/Help'))
+const Privacy = lazy(() => import('./pages/Privacy'))
+const Terms = lazy(() => import('./pages/Terms'))
+const ListSkill = lazy(() => import('./pages/ListSkill'))
 
 export default function App() {
   const { initialize } = useAuthStore()
@@ -51,6 +53,10 @@ export default function App() {
             <Route path="/help" element={<Help />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            
+            {/* INSTITUTE PORTAL */}
+            <Route path="/institute/onboarding" element={<InstituteOnboarding />} />
+            <Route path="/institute/dashboard" element={<InstituteDashboard />} />
 
             {/* ONBOARDING — auth required, no navbar */}
             <Route path="/onboarding" element={
@@ -65,17 +71,17 @@ export default function App() {
                 <RootLayout />
               </ProtectedRoute>
             }>
-              <Route path="/dashboard"             element={<Dashboard />} />
-              <Route path="/explore"               element={<Explore />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/explore" element={<Explore />} />
               <Route path="/explore/skill/:skillId" element={<SkillDetail />} />
-              <Route path="/list-skill"             element={<ListSkill />} />
-              <Route path="/vault"                 element={<Vault />} />
-              <Route path="/chat"                  element={<Chat />} />
-              <Route path="/chat/:conversationId"  element={<Chat />} />
-              <Route path="/profile"               element={<Profile />} />
-              <Route path="/profile/:userId"       element={<UserProfile />} />
-              <Route path="/notifications"         element={<Notifications />} />
-              <Route path="/settings"              element={<Settings />} />
+              <Route path="/list-skill" element={<ListSkill />} />
+              <Route path="/vault" element={<Vault />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/chat/:conversationId" element={<Chat />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:userId" element={<UserProfile />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
 
             {/* ADMIN — auth + admin role */}
@@ -94,7 +100,7 @@ export default function App() {
 
             {/* FALLBACKS */}
             <Route path="/404" element={<NotFound />} />
-            <Route path="*"    element={<Navigate to="/404" replace />} />
+            <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>
         </Suspense>
         <Toaster position="top-right" richColors closeButton />
