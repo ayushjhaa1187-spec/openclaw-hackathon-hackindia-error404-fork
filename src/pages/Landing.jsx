@@ -576,5 +576,54 @@ export default function Landing() {
 
       <Footer dark />
     </div>
+    
+        {/* Institute Portal CTA */}
+        <section className="py-24 px-6 bg-gradient-to-br from-indigo-950 via-slate-950 to-purple-950 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500 rounded-full blur-[120px]" />
+          </div>
+          <div className="max-w-4xl mx-auto text-center relative z-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-8">
+              <Building2 size={14} className="text-indigo-400" />
+              <span className="text-indigo-400 text-[11px] font-black uppercase tracking-widest">For Institution Administrators</span>
+            </div>
+            <h2 className="text-5xl lg:text-6xl font-black text-white font-outfit tracking-tight mb-6">
+              Bring Your Campus<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Into the Federation</span>
+            </h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed mb-12">
+              Give your institution the authority to govern, monitor, and empower student knowledge exchange at scale. Join 5+ partner campuses already running on EduSync.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                to="/institute/onboarding"
+                className="group px-10 py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl text-sm uppercase tracking-widest transition-all flex items-center gap-3 shadow-2xl shadow-indigo-600/30"
+              >
+                <Building2 size={20} />
+                Register Your Campus
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link
+                to="/institute/dashboard"
+                className="px-10 py-5 border border-white/10 hover:border-indigo-500/50 text-white font-black rounded-2xl text-sm uppercase tracking-widest transition-all flex items-center gap-3 hover:bg-white/5"
+              >
+                <Globe size={18} />
+                View Dashboard Demo
+              </Link>
+            </div>
+            <div className="mt-16 grid grid-cols-3 gap-8 max-w-lg mx-auto">
+              {[
+                { value: '5+', label: 'Partner Campuses' },
+                { value: '2.4K+', label: 'Active Students' },
+                { value: '842', label: 'Knowledge Swaps' }
+              ].map((stat, i) => (
+                <div key={i} className="text-center">
+                  <div className="text-3xl font-black text-white font-outfit">{stat.value}</div>
+                  <div className="text-[10px] font-black uppercase text-slate-500 tracking-widest mt-1">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
   )
 }
